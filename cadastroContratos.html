@@ -165,12 +165,12 @@
     btn.textContent = "Processando...";
 
     try {
-      // 3. POST para o Google Apps Script passando a AÇÃO e os DADOS
       const response = await fetch(URL_API, {
         method: "POST",
-        // O GAS recebe o corpo como string, vamos passar um JSON no 'body'
+        // ESTA LINHA É O QUE FALTAVA:
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          acao: 'salvarContrato', // Ação que você criará no seu GAS
+          acao: 'salvarContrato', 
           dados: dados
         })
       });
@@ -189,7 +189,7 @@
       btn.disabled = false;
       btn.textContent = "ATUALIZAR CONTRATO";
     }
-  }
+}
 
   carregarCerimonialistas();
 </script>
