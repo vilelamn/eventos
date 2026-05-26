@@ -194,268 +194,258 @@
     </div>
 
     <script>
-      (function () {
-        // CORREÇÃO 1: Definição limpa da URL da API do Google Apps Script
-        const API_URL = "https://script.google.com/macros/s/AKfycbydL9Fj-dOGNQ3gtqHGMBAQ8z4EVCaAbhCZqT9CwNsNAZ9gPSIBOqYIexIDXtT6fsloDQ/exec";
+  (function () {
+    // URL Única do seu Google Apps Script Executável
+    const API_URL = "https://script.google.com/macros/s/AKfycbydL9Fj-dOGNQ3gtqHGMBAQ8z4EVCaAbhCZqT9CwNsNAZ9gPSIBOqYIexIDXtT6fsloDQ/exec";
 
-        const tbody = document.getElementById("tabelaEventos");
-        const statusDiv = document.getElementById("statusEventos");
-        const loadingOverlay = document.getElementById("loadingOverlay");
-        const loadingText = document.getElementById("loadingText");
+    const tbody = document.getElementById("tabelaEventos");
+    const statusDiv = document.getElementById("statusEventos");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    const loadingText = document.getElementById("loadingText");
 
-        let userEmail = localStorage.getItem("userEmail") || "vilelamn@gmail.com";
-        let userRole = localStorage.getItem("userRole") || "ADMINISTRADOR";
+    // Captura os dados salvos no login (se vazios, assume o padrão administrador para os testes)
+    let userEmail = localStorage.getItem("userEmail") || "vilelamn@gmail.com";
+    let userRole = localStorage.getItem("userRole") || "ADMINISTRADOR";
 
-        // Cache local para os eventos carregados (evita requisições extras ao editar)
-        let eventosCache = [];
+    // Cache local para manipulação rápida em tela
+    let eventosCache = [];
 
-        window.openModalEventos = function () {
-          document.getElementById("idEvento").value = "";
-          document.getElementById("formEvento").reset();
-          document.getElementById("modalTitleEvento").textContent = "Novo Evento";
-          document.getElementById("btnExcluirEvento").classList.add("hidden");
-          document.getElementById("eventoModal").classList.add("active");
-        };
+    window.openModalEventos = function () {
+      document.getElementById("idEvento").value = "";
+      document.getElementById("formEvento").reset();
+      document.getElementById("modalTitleEvento").textContent = "Novo Evento";
+      document.getElementById("btnExcluirEvento").classList.add("hidden");
+      document.getElementById("eventoModal").classList.add("active");
+    };
 
-        window.closeModalEvento = function () {
-          document.getElementById("eventoModal").classList.remove("active");
-        };
+    window.closeModalEvento = function () {
+      document.getElementById("eventoModal").classList.remove("active");
+    };
 
-        function mostrarLoading(texto = "Processando...") {
-          if (!loadingOverlay) return;
-          loadingText.textContent = texto;
-          loadingOverlay.classList.remove("hidden");
+    function mostrarLoading(texto = "Processando...") {
+      if (!loadingOverlay) return;
+      loadingText.textContent = texto;
+      loadingOverlay.classList.remove("hidden");
+    }
+
+    function esconderLoading() {
+      if (!loadingOverlay) return;
+      loadingOverlay.classList.add("hidden");
+    }
+
+    function formatarDataParaInput(dataStr) {
+      if (!dataStr) return "";
+      if (dataStr.includes("/")) {
+        const [d, m, y] = dataStr.split("/");
+        return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+      }
+      if (dataStr.includes("T")) return dataStr.split("T")[0];
+      return dataStr;
+    }
+
+    function exibirSucesso(msg) {
+      const successMsg = document.getElementById("successMessage");
+      const modal = document.getElementById("successModal");
+      if (successMsg) successMsg.textContent = msg;
+      if (!modal) return;
+      modal.classList.add("active");
+      setTimeout(() => modal.classList.remove("active"), 2000);
+    }
+
+    window.copiarLinkEvento = function (url) {
+      if (!url) {
+        alert("Link ainda não gerado para este evento.");
+        return;
+      }
+      navigator.clipboard.writeText(url)
+        .then(() => exibirSucesso("Link copiado!"))
+        .catch(() => alert("Erro ao copiar link."));
+    };
+
+    // ==========================================
+    // CARREGAR TABELA (Sincronizado com seu doGet)
+    // ==========================================
+    window.carregarTabela = async function () {
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      if (statusDiv) statusDiv.classList.remove("hidden");
+
+      try {
+        // AJUSTADO: Agora aponta exatamente para 'listarEventosTabela' do seu switch/case
+        const url = `${API_URL}?acao=listarEventosTabela&email=${encodeURIComponent(userEmail)}&role=${encodeURIComponent(userRole)}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Erro na resposta do servidor.");
+        
+        const res = await response.json();
+        const lista = Array.isArray(res) ? res : (res.data || []);
+        eventosCache = lista;
+
+        if (lista.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-gray-500">Nenhum evento encontrado.</td></tr>`;
+          return;
         }
 
-        function esconderLoading() {
-          if (!loadingOverlay) return;
-          loadingOverlay.classList.add("hidden");
+        lista.forEach((ev) => {
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-gray-50 transition border-b border-gray-100";
+          const status = ev.status || "ABERTO";
+          const badgeClass = status === "ABERTO" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700";
+
+          tr.innerHTML = `
+            <td class="px-6 py-4 font-bold text-gray-800">${ev.eventyname || "-"}</td>
+            <td class="hidden md:table-cell px-6 py-4 text-gray-600">${ev.eventlocation || "-"}</td>
+            <td class="px-6 py-4 text-gray-600">${ev.eventdate || "-"}</td>
+            <td class="hidden md:table-cell px-6 py-4 text-gray-600">${ev.eventhour || "-"}</td>
+            <td class="hidden md:table-cell px-6 py-4 text-center text-gray-600">${ev.esteemed_guests || 0}</td>
+            <td class="px-6 py-4 text-center"><span class="status-badge ${badgeClass}">${status}</span></td>
+            <td class="px-6 py-4 text-center">
+              <div class="flex justify-center gap-3">
+                <button onclick="editarEvento('${ev.idevento}')" class="text-indigo-600 hover:scale-110 transition">✏️</button>
+                <button onclick="copiarLinkEvento('${ev.url || ""}')" class="text-blue-600 hover:scale-110 transition">🔗</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (erro) {
+        console.error("Erro geral:", erro);
+        tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-red-500">Erro ao conectar com o servidor de eventos.</td></tr>`;
+      } finally {
+        if (statusDiv) statusDiv.classList.add("hidden");
+      }
+    };
+
+    // ==========================================
+    // SALVAR EVENTO (Sincronizado com seu doGet)
+    // ==========================================
+    window.salvarEvento = async function () {
+      const dadosEvento = {
+        idevento: document.getElementById("idEvento").value,
+        eventyname: document.getElementById("nomeEvento").value,
+        eventdate: document.getElementById("dataEvento").value,
+        eventhour: document.getElementById("horaEvento").value,
+        eventlocation: document.getElementById("localEvento").value,
+        hosts: document.getElementById("anfitrioesEvento").value,
+        emailanfitriao: document.getElementById("emailAnfitriaoEvento").value,
+        esteemed_guests: document.getElementById("estimativaEvento").value,
+        status: document.getElementById("statusEvento").value,
+        userEmail: userEmail
+      };
+
+      // AJUSTADO: Parâmetros enviados na URL do GET conforme seu processarSalvarEvento espera
+      // O seu doGet espera receber: ?acao=processarSalvarEvento&dados=JSON_STRING
+      const urlSalvar = `${API_URL}?acao=processarSalvarEvento&dados=${encodeURIComponent(JSON.stringify(dadosEvento))}`;
+
+      mostrarLoading("Salvando evento...");
+
+      try {
+        // Efetuando a chamada via GET estruturada para o seu doGet processar o JSON stringificado
+        const response = await fetch(urlSalvar);
+        const res = await response.json();
+
+        if (!res.success) {
+          alert(res.message || "Erro ao salvar evento.");
+          return;
         }
 
-        function formatarDataParaInput(dataStr) {
-          if (!dataStr) return "";
-          if (dataStr.includes("/")) {
-            const [d, m, y] = dataStr.split("/");
-            return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-          }
-          // Se já for uma string de data longa ISO, tenta fatiar para YYYY-MM-DD
-          if (dataStr.includes("T")) return dataStr.split("T")[0];
-          return dataStr;
-        }
+        closeModalEvento();
+        exibirSucesso("Evento salvo com sucesso!");
+        await carregarTabela();
+      } catch (e) {
+        alert("Erro de comunicação ao salvar o evento.");
+      } finally {
+        esconderLoading();
+      }
+    };
 
-        function exibirSucesso(msg) {
-          const successMsg = document.getElementById("successMessage");
-          const modal = document.getElementById("successModal");
-          if (successMsg) successMsg.textContent = msg;
-          if (!modal) return;
-          modal.classList.add("active");
-          setTimeout(() => modal.classList.remove("active"), 2000);
-        }
+    window.editarEvento = function (id) {
+      const ev = eventosCache.find(item => item.idevento === id);
+      if (!ev) {
+        alert("Erro ao buscar dados do evento localmente.");
+        return;
+      }
 
-        window.copiarLinkEvento = function (url) {
-          if (!url) {
-            alert("Link ainda não gerado para este evento.");
-            return;
-          }
-          navigator.clipboard.writeText(url)
-            .then(() => exibirSucesso("Link copiado!"))
-            .catch(() => alert("Erro ao copiar link."));
-        };
+      document.getElementById("idEvento").value = ev.idevento || "";
+      document.getElementById("nomeEvento").value = ev.eventyname || "";
+      document.getElementById("dataEvento").value = formatarDataParaInput(ev.eventdate);
+      document.getElementById("horaEvento").value = ev.eventhour || "";
+      document.getElementById("localEvento").value = ev.eventlocation || "";
+      document.getElementById("anfitrioesEvento").value = ev.hosts || "";
+      document.getElementById("emailAnfitriaoEvento").value = ev.emailanfitriao || "";
+      document.getElementById("estimativaEvento").value = ev.esteemed_guests || "";
+      document.getElementById("statusEvento").value = ev.status || "ABERTO";
 
-        // CORREÇÃO 2: Carregar dados enviando parâmetros no GET aceitos pelo GAS
-        window.carregarTabela = async function () {
-          if (!tbody) return;
-          tbody.innerHTML = "";
-          if (statusDiv) statusDiv.classList.remove("hidden");
+      document.getElementById("modalTitleEvento").textContent = "Editar Evento";
+      document.getElementById("btnExcluirEvento").classList.remove("hidden");
+      document.getElementById("eventoModal").classList.add("active");
+    };
 
-          try {
-            // Enviamos a "acao" na URL (GET) para o processarRequisicao identificar
-            const url = `${API_URL}?acao=listarEventos&email=${encodeURIComponent(userEmail)}&role=${encodeURIComponent(userRole)}`;
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("Erro na resposta do servidor.");
-            
-            const res = await response.json();
-            
-            // Tratamento caso o back-end retorne { success: true, data: [...] }
-            const lista = Array.isArray(res) ? res : (res.data || []);
-            eventosCache = lista; // Salvamos no cache
+    // ==========================================
+    // EXCLUIR EVENTO (Sincronizado com seu doGet)
+    // ==========================================
+    window.deletarEvento = function () {
+      const id = document.getElementById("idEvento").value;
+      const nome = document.getElementById("nomeEvento").value;
+      if (!id) return;
+      
+      document.getElementById("nomeEventoConfirm").textContent = `"${nome}"`;
+      const modalConfirm = document.getElementById("confirmDeleteModal");
+      modalConfirm.classList.add("active");
 
-            if (lista.length === 0) {
-              tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-gray-500">Nenhum evento encontrado.</td></tr>`;
-              return;
-            }
+      const btnFinal = document.getElementById("btnConfirmarExclusaoFinal");
+      btnFinal.onclick = function () {
+        executarExclusaoNoServidor(id);
+      };
+    };
 
-            lista.forEach((ev) => {
-              const tr = document.createElement("tr");
-              tr.className = "hover:bg-gray-50 transition border-b border-gray-100";
-              const status = ev.status || "ABERTO";
-              const badgeClass = status === "ABERTO" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700";
+    async function executarExclusaoNoServidor(id) {
+      window.closeConfirmModal();
+      mostrarLoading("Excluindo evento...");
 
-              tr.innerHTML = `
-                <td class="px-6 py-4 font-bold text-gray-800">${ev.eventyname || "-"}</td>
-                <td class="hidden md:table-cell px-6 py-4 text-gray-600">${ev.eventlocation || "-"}</td>
-                <td class="px-6 py-4 text-gray-600">${ev.eventdate || "-"}</td>
-                <td class="hidden md:table-cell px-6 py-4 text-gray-600">${ev.eventhour || "-"}</td>
-                <td class="hidden md:table-cell px-6 py-4 text-center text-gray-600">${ev.esteemed_guests || 0}</td>
-                <td class="px-6 py-4 text-center"><span class="status-badge ${badgeClass}">${status}</span></td>
-                <td class="px-6 py-4 text-center">
-                  <div class="flex justify-center gap-3">
-                    <button onclick="editarEvento('${ev.idevento}')" class="text-indigo-600 hover:scale-110 transition">✏️</button>
-                    <button onclick="copiarLinkEvento('${ev.url || ""}')" class="text-blue-600 hover:scale-110 transition">🔗</button>
-                  </div>
-                </td>
-              `;
-              tbody.appendChild(tr);
-            });
-          } catch (erro) {
-            console.error("Erro geral:", erro);
-            tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-red-500">Erro ao conectar com o servidor de eventos.</td></tr>`;
-          } finally {
-            if (statusDiv) statusDiv.classList.add("hidden");
-          }
-        };
+      // AJUSTADO: Aponta exatamente para 'excluirEventoNoServidor' passando o ID na URL
+      const urlExcluir = `${API_URL}?acao=excluirEventoNoServidor&id=${encodeURIComponent(id)}`;
 
-        // CORREÇÃO 3: Salvar enviando a estrutura unificada para o POST do seu Code.gs
-        window.salvarEvento = async function () {
-          const dados = {
-            idevento: document.getElementById("idEvento").value,
-            eventyname: document.getElementById("nomeEvento").value,
-            eventdate: document.getElementById("dataEvento").value,
-            eventhour: document.getElementById("horaEvento").value,
-            eventlocation: document.getElementById("localEvento").value,
-            hosts: document.getElementById("anfitrioesEvento").value,
-            emailanfitriao: document.getElementById("emailAnfitriaoEvento").value,
-            esteemed_guests: document.getElementById("estimativaEvento").value,
-            status: document.getElementById("statusEvento").value,
-            userEmail: userEmail
-          };
+      try {
+        const response = await fetch(urlExcluir);
+        const res = await response.json();
 
-          const payload = {
-            acao: 'salvarEvento', // Identificador da rota no seu switch/case do GAS
-            dados: dados
-          };
-
-          mostrarLoading("Salvando evento...");
-
-          try {
-            const response = await fetch(API_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            });
-
-            const res = await response.json();
-
-            if (!res.success) {
-              alert(res.message || "Erro ao salvar evento.");
-              return;
-            }
-
-            closeModalEvento();
-            exibirSucesso("Evento salvo com sucesso!");
-            await carregarTabela();
-          } catch (e) {
-            alert("Erro de comunicação ao salvar o evento.");
-          } finally {
-            esconderLoading();
-          }
-        };
-
-        // CORREÇÃO 4: Busca os dados direto do cache local, poupando requisições lentas
-        window.editarEvento = function (id) {
-          const ev = eventosCache.find(item => item.idevento === id);
-          
-          if (!ev) {
-            alert("Erro ao buscar dados do evento selecionado localmente.");
-            return;
-          }
-
-          document.getElementById("idEvento").value = ev.idevento || "";
-          document.getElementById("nomeEvento").value = ev.eventyname || "";
-          document.getElementById("dataEvento").value = formatarDataParaInput(ev.eventdate);
-          document.getElementById("horaEvento").value = ev.eventhour || "";
-          document.getElementById("localEvento").value = ev.eventlocation || "";
-          document.getElementById("anfitrioesEvento").value = ev.hosts || "";
-          document.getElementById("emailAnfitriaoEvento").value = ev.emailanfitriao || "";
-          document.getElementById("estimativaEvento").value = ev.esteemed_guests || "";
-          document.getElementById("statusEvento").value = ev.status || "ABERTO";
-
-          document.getElementById("modalTitleEvento").textContent = "Editar Evento";
-          document.getElementById("btnExcluirEvento").classList.remove("hidden");
-          document.getElementById("eventoModal").classList.add("active");
-        };
-
-        // CORREÇÃO 5: Deletar usando método POST com ação específica para o GAS
-        window.deletarEvento = function () {
-          const id = document.getElementById("idEvento").value;
-          const nome = document.getElementById("nomeEvento").value;
-          if (!id) return;
-          
-          document.getElementById("nomeEventoConfirm").textContent = `"${nome}"`;
-          const modalConfirm = document.getElementById("confirmDeleteModal");
-          modalConfirm.classList.add("active");
-
-          const btnFinal = document.getElementById("btnConfirmarExclusaoFinal");
-          btnFinal.onclick = function () {
-            executarExclusaoNoServidor(id);
-          };
-        };
-
-        async function executarExclusaoNoServidor(id) {
-          window.closeConfirmModal();
-          mostrarLoading("Excluindo evento...");
-
-          const payload = {
-            acao: 'deletarEvento',
-            dados: { idevento: id, userEmail: userEmail }
-          };
-
-          try {
-            // Modificado de DELETE para POST, que o Apps Script suporta nativamente
-            const response = await fetch(API_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-            });
-            const res = await response.json();
-
-            if (res.success) {
-              closeModalEvento();
-              exibirSucesso("Evento excluído com sucesso!");
-              await carregarTabela();
-            } else {
-              alert("Erro reportado pelo servidor: " + res.message);
-            }
-          } catch (err) {
-            alert("Falha de rede ao excluir: " + err);
-          } finally {
-            esconderLoading();
-          }
-        }
-
-        window.closeConfirmModal = function () {
-          document.getElementById("confirmDeleteModal").classList.remove("active");
-        };
-
-        window.voltarParaDashboard = function () {
-          if (window.parent && window.parent.voltarParaDashboard) {
-            window.parent.voltarParaDashboard();
-          } else {
-            window.location.href = "index.html";
-          }
-        };
-
-        async function init() {
-          const role = userRole.toUpperCase();
-          if (["CERIMONIALISTA", "ADMIN", "ADMINISTRADOR"].includes(role)) {
-            const btn = document.getElementById("btnNovoEventos");
-            if (btn) btn.classList.remove("hidden");
-          }
+        if (res.success) {
+          closeModalEvento();
+          exibirSucesso("Evento excluído com sucesso!");
           await carregarTabela();
+        } else {
+          alert("Erro reportado pelo servidor: " + res.message);
         }
+      } catch (err) {
+        alert("Falha de rede ao excluir: " + err);
+      } finally {
+        esconderLoading();
+      }
+    }
 
-        init();
-      })();
-    </script>
+    window.closeConfirmModal = function () {
+      document.getElementById("confirmDeleteModal").classList.remove("active");
+    };
+
+    window.voltarParaDashboard = function () {
+      if (window.parent && window.parent.voltarParaDashboard) {
+        window.parent.voltarParaDashboard();
+      } else {
+        window.location.href = "index.html";
+      }
+    };
+
+    async function init() {
+      const role = userRole.toUpperCase();
+      if (["CERIMONIALISTA", "ADMIN", "ADMINISTRADOR"].includes(role)) {
+        const btn = document.getElementById("btnNovoEventos");
+        if (btn) btn.classList.remove("hidden");
+      }
+      await carregarTabela();
+    }
+
+    init();
+  })();
+</script>
   </body>
 </html>
