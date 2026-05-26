@@ -127,71 +127,71 @@
     </div>
 
     <script>
-      // Configuração Global de API
-      const API_CONTRATOS =
-        typeof API_URL !== "undefined" ? API_URL : "http://localhost:3000/api";
-      window.API_CONTRATOS_GLOBAL = API_CONTRATOS;
+  // 1. URL da sua Implantação (Deploy) do Google Apps Script
+  const URL_API = "https://script.google.com/macros/s/AKfycbwqPIGOEZZ6Hj6KC7_HZjC6b082FWLfeE65OkrgttL4zO_qnE4g18jVvNCbAPonYu7_Sw/exec";
 
-      async function carregarCerimonialistas() {
-        const select = document.getElementById("cerimonialista");
-        try {
-          const response = await fetch(`${API_CONTRATOS}/cerimonialistas`);
-          if (!response.ok) throw new Error("Falha na rede");
-          const lista = await response.json();
+  async function carregarCerimonialistas() {
+    const select = document.getElementById("cerimonialista");
+    try {
+      // 2. Chamada usando a query string 'acao'
+      const response = await fetch(`${URL_API}?acao=getCerimonialistas`);
+      const lista = await response.json();
 
-          select.innerHTML =
-            '<option value="">Selecione um cerimonialista</option>';
-          lista.forEach((c) => {
-            const opt = document.createElement("option");
-            opt.value = c.id;
-            opt.textContent = `${c.nome} (${c.email})`;
-            select.appendChild(opt);
-          });
-        } catch (err) {
-          select.innerHTML = '<option value="">Erro ao carregar lista</option>';
-        }
+      select.innerHTML = '<option value="">Selecione um cerimonialista</option>';
+      lista.forEach((c) => {
+        const opt = document.createElement("option");
+        opt.value = c.id; // Certifique-se que o campo no GAS chama 'id' ou ajuste para 'id_username'
+        opt.textContent = `${c.nome} (${c.email})`;
+        select.appendChild(opt);
+      });
+    } catch (err) {
+      select.innerHTML = '<option value="">Erro ao carregar lista</option>';
+    }
+  }
+
+  async function salvarContratoSaaS() {
+    const btn = document.getElementById("btnSalvarContrato");
+    const dados = {
+      cerimonialistaId: document.getElementById("cerimonialista").value,
+      plano: document.getElementById("plano").value,
+      valor: document.getElementById("valor").value,
+      ciclo: document.getElementById("ciclo").value,
+      expiracao: document.getElementById("expiracao").value,
+    };
+
+    if (!dados.cerimonialistaId) return alert("Selecione um cerimonialista");
+
+    btn.disabled = true;
+    btn.textContent = "Processando...";
+
+    try {
+      // 3. POST para o Google Apps Script passando a AÇÃO e os DADOS
+      const response = await fetch(URL_API, {
+        method: "POST",
+        // O GAS recebe o corpo como string, vamos passar um JSON no 'body'
+        body: JSON.stringify({
+          acao: 'salvarContrato', // Ação que você criará no seu GAS
+          dados: dados
+        })
+      });
+
+      const res = await response.json();
+      if (res.success) {
+        alert("✅ Contrato atualizado com sucesso!");
+        window.location.reload();
+      } else {
+        alert("Erro: " + res.message);
       }
+    } catch (err) {
+      console.error(err);
+      alert("Erro de comunicação com o servidor.");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "ATUALIZAR CONTRATO";
+    }
+  }
 
-      async function salvarContratoSaaS() {
-        const btn = document.getElementById("btnSalvarContrato");
-        const dados = {
-          cerimonialistaId: document.getElementById("cerimonialista").value,
-          plano: document.getElementById("plano").value,
-          valor: document.getElementById("valor").value,
-          ciclo: document.getElementById("ciclo").value,
-          expiracao: document.getElementById("expiracao").value,
-        };
-
-        if (!dados.cerimonialistaId)
-          return alert("Selecione um cerimonialista");
-
-        btn.disabled = true;
-        btn.textContent = "Processando...";
-
-        try {
-          const response = await fetch(`${API_CONTRATOS}/contratos`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dados),
-          });
-
-          const res = await response.json();
-          if (res.success) {
-            alert("✅ Contrato atualizado com sucesso!");
-            window.location.reload(); // Ou redirecionamento
-          } else {
-            alert("Erro: " + res.message);
-          }
-        } catch (err) {
-          alert("Erro de comunicação com o servidor.");
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "ATUALIZAR CONTRATO";
-        }
-      }
-
-      // Inicialização
-      carregarCerimonialistas();
-    </script>
+  carregarCerimonialistas();
+</script>
   </body>
 </html>
