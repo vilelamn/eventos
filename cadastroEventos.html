@@ -7,10 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
     <style>
       body {
@@ -26,9 +23,7 @@
         animation: spin 1s linear infinite;
       }
       @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
+        to { transform: rotate(360deg); }
       }
       .modal-overlay {
         position: fixed;
@@ -54,105 +49,50 @@
     </style>
   </head>
   <body class="bg-gray-100 min-h-screen">
-    <div
-      id="loadingOverlay"
-      class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[100] hidden"
-    >
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[100] hidden">
       <div class="bg-white p-6 rounded-xl flex flex-col items-center shadow-xl">
-        <div
-          class="loader mb-4 border-4 border-indigo-200 border-t-indigo-600 rounded-full w-12 h-12 animate-spin"
-        ></div>
-        <span id="loadingText" class="text-gray-700 font-semibold"
-          >Processando...</span
-        >
+        <div class="loader mb-4 border-4 border-indigo-200 border-t-indigo-600 rounded-full w-12 h-12 animate-spin"></div>
+        <span id="loadingText" class="text-gray-700 font-semibold">Processando...</span>
       </div>
     </div>
 
     <div class="p-4 sm:p-8" id="eventos-view">
       <div class="max-w-6xl mx-auto">
-        <header
-          class="mb-8 p-4 md:p-6 bg-white rounded-xl shadow-lg flex flex-col md:flex-row justify-between items-center border-l-8 border-indigo-600 gap-4"
-        >
-          <h1
-            class="text-xl md:text-3xl font-bold text-gray-800 text-center md:text-left"
-          >
-            Cadastro de Eventos
-          </h1>
+        <header class="mb-8 p-4 md:p-6 bg-white rounded-xl shadow-lg flex flex-col md:flex-row justify-between items-center border-l-8 border-indigo-600 gap-4">
+          <h1 class="text-xl md:text-3xl font-bold text-gray-800 text-center md:text-left">Cadastro de Eventos</h1>
 
           <div class="flex gap-2 md:gap-3">
-            <button
-              id="btnNovoEventos"
-              onclick="openModalEventos()"
-              class="hidden px-3 py-2 md:px-5 md:py-2.5 bg-indigo-600 text-white text-sm md:text-base rounded-lg shadow hover:bg-indigo-700 transition flex items-center gap-2"
-            >
+            <button id="btnNovoEventos" onclick="openModalEventos()" class="hidden px-3 py-2 md:px-5 md:py-2.5 bg-indigo-600 text-white text-sm md:text-base rounded-lg shadow hover:bg-indigo-700 transition flex items-center gap-2">
               Inserir Evento
             </button>
 
-            <button
-              onclick="voltarParaDashboard()"
-              class="px-3 py-2 md:px-4 md:py-2 border border-indigo-600 text-indigo-600 text-sm md:text-base rounded-lg hover:bg-indigo-50 transition"
-            >
+            <button onclick="voltarParaDashboard()" class="px-3 py-2 md:px-4 md:py-2 border border-indigo-600 text-indigo-600 text-sm md:text-base rounded-lg hover:bg-indigo-50 transition">
               ◀ Painel
             </button>
           </div>
         </header>
 
-        <div
-          class="bg-white rounded-xl shadow-xl overflow-hidden border border-indigo-200"
-        >
+        <div class="bg-white rounded-xl shadow-xl overflow-hidden border border-indigo-200">
           <div class="overflow-x-auto">
             <table class="min-w-full">
               <thead class="bg-gray-50 border-b">
                 <tr>
-                  <th
-                    class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase"
-                  >
-                    Nome do Evento
-                  </th>
-                  <th
-                    class="hidden md:table-cell px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase"
-                  >
-                    Local
-                  </th>
-                  <th
-                    class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase"
-                  >
-                    Data
-                  </th>
-                  <th
-                    class="hidden md:table-cell px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase"
-                  >
-                    Hora
-                  </th>
-                  <th
-                    class="hidden md:table-cell px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase"
-                  >
-                    Quantidade
-                  </th>
-                  <th
-                    class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase"
-                  >
-                    Status
-                  </th>
-                  <th
-                    class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase"
-                  >
-                    Ações
-                  </th>
+                  <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Nome do Evento</th>
+                  <th class="hidden md:table-cell px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Local</th>
+                  <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Data</th>
+                  <th class="hidden md:table-cell px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Hora</th>
+                  <th class="hidden md:table-cell px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase">Quantidade</th>
+                  <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase">Status</th>
+                  <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase">Ações</th>
                 </tr>
               </thead>
-              <tbody
-                id="tabelaEventos"
-                class="divide-y divide-gray-100"
-              ></tbody>
+              <tbody id="tabelaEventos" class="divide-y divide-gray-100"></tbody>
             </table>
           </div>
 
           <div id="statusEventos" class="p-10 text-center text-gray-500">
             <div class="flex flex-col items-center gap-3">
-              <div
-                class="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"
-              ></div>
+              <div class="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
               <span>Sincronizando com a base de dados...</span>
             </div>
           </div>
@@ -161,131 +101,46 @@
     </div>
 
     <div id="eventoModal" class="modal-overlay">
-      <div
-        class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
-      >
+      <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-6">
-          <h2 id="modalTitleEvento" class="text-2xl font-bold text-gray-800">
-            Novo Evento
-          </h2>
-          <button
-            onclick="closeModalEvento()"
-            class="text-gray-400 hover:text-gray-600 text-2xl"
-          >
-            &times;
-          </button>
+          <h2 id="modalTitleEvento" class="text-2xl font-bold text-gray-800">Novo Evento</h2>
+          <button onclick="closeModalEvento()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
         </div>
 
-        <form
-          id="formEvento"
-          onsubmit="
-            event.preventDefault();
-            salvarEvento();
-          "
-        >
+        <form id="formEvento" onsubmit="event.preventDefault(); salvarEvento();">
           <input type="hidden" id="idEvento" />
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="md:col-span-2">
-              <label
-                for="nomeEvento"
-                class="block text-sm font-medium text-gray-700"
-                >Nome do Evento</label
-              >
-              <input
-                id="nomeEvento"
-                type="text"
-                required
-                class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
+              <label for="nomeEvento" class="block text-sm font-medium text-gray-700">Nome do Evento</label>
+              <input id="nomeEvento" type="text" required class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
             <div>
-              <label
-                for="dataEvento"
-                class="block text-sm font-medium text-gray-700"
-                >Data</label
-              >
-              <input
-                id="dataEvento"
-                type="date"
-                required
-                class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
+              <label for="dataEvento" class="block text-sm font-medium text-gray-700">Data</label>
+              <input id="dataEvento" type="date" required class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
             <div>
-              <label
-                for="horaEvento"
-                class="block text-sm font-medium text-gray-700"
-                >Hora</label
-              >
-              <input
-                id="horaEvento"
-                type="time"
-                required
-                class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
+              <label for="horaEvento" class="block text-sm font-medium text-gray-700">Hora</label>
+              <input id="horaEvento" type="time" required class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
             <div class="md:col-span-2">
-              <label
-                for="localEvento"
-                class="block text-sm font-medium text-gray-700"
-                >Local</label
-              >
-              <input
-                id="localEvento"
-                type="text"
-                required
-                class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
+              <label for="localEvento" class="block text-sm font-medium text-gray-700">Local</label>
+              <input id="localEvento" type="text" required class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
             <div class="md:col-span-2">
-              <label
-                for="anfitrioesEvento"
-                class="block text-sm font-medium text-gray-700"
-                >Anfitriões</label
-              >
-              <input
-                id="anfitrioesEvento"
-                type="text"
-                placeholder="Ex: Noivos, Debutante..."
-                class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
+              <label for="anfitrioesEvento" class="block text-sm font-medium text-gray-700">Anfitriões</label>
+              <input id="anfitrioesEvento" type="text" placeholder="Ex: Noivos, Debutante..." class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
             <div class="md:col-span-2">
-              <label
-                for="emailAnfitriaoEvento"
-                class="block text-sm font-medium text-gray-700"
-                >E-mail do Anfitrião</label
-              >
-              <input
-                id="emailAnfitriaoEvento"
-                type="email"
-                placeholder="ex: anfitriao@email.com"
-                required
-                class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
+              <label for="emailAnfitriaoEvento" class="block text-sm font-medium text-gray-700">E-mail do Anfitrião</label>
+              <input id="emailAnfitriaoEvento" type="email" placeholder="ex: anfitriao@email.com" required class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
             <div>
-              <label
-                for="estimativaEvento"
-                class="block text-sm font-medium text-gray-700"
-                >Convidados (Estimativa)</label
-              >
-              <input
-                id="estimativaEvento"
-                type="number"
-                class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
+              <label for="estimativaEvento" class="block text-sm font-medium text-gray-700">Convidados (Estimativa)</label>
+              <input id="estimativaEvento" type="number" class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
             <div>
-              <label
-                for="statusEvento"
-                class="block text-sm font-medium text-gray-700"
-                >Status</label
-              >
-              <select
-                id="statusEvento"
-                class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-              >
+              <label for="statusEvento" class="block text-sm font-medium text-gray-700">Status</label>
+              <select id="statusEvento" class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                 <option value="ABERTO">ABERTO</option>
                 <option value="FECHADO">FECHADO</option>
                 <option value="CANCELADO">CANCELADO</option>
@@ -294,26 +149,14 @@
           </div>
 
           <div class="mt-8 flex flex-wrap gap-3">
-            <button
-              id="btnExcluirEvento"
-              type="button"
-              onclick="deletarEvento()"
-              class="hidden px-6 py-2.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition font-semibold"
-            >
+            <button id="btnExcluirEvento" type="button" onclick="deletarEvento()" class="hidden px-6 py-2.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition font-semibold">
               Excluir
             </button>
             <div class="flex-1 flex gap-3">
-              <button
-                type="button"
-                onclick="closeModalEvento()"
-                class="flex-1 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50"
-              >
+              <button type="button" onclick="closeModalEvento()" class="flex-1 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50">
                 Cancelar
               </button>
-              <button
-                type="submit"
-                class="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg transition"
-              >
+              <button type="submit" class="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg transition">
                 Salvar
               </button>
             </div>
@@ -323,104 +166,53 @@
     </div>
 
     <div id="successModal" class="modal-overlay">
-      <div
-        class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm mx-4 text-center"
-      >
-        <div
-          class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-10 w-10"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="3"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M5 13l4 4L19 7"
-            />
+      <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm mx-4 text-center">
+        <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
         <h2 class="text-2xl font-bold text-gray-800 mb-2">Sucesso!</h2>
-        <p id="successMessage" class="text-gray-600">
-          Operação realizada com sucesso.
-        </p>
+        <p id="successMessage" class="text-gray-600">Operação realizada com sucesso.</p>
       </div>
     </div>
 
     <div id="confirmDeleteModal" class="modal-overlay">
-      <div
-        class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm mx-4 text-center"
-      >
-        <div
-          class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-10 w-10"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
+      <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm mx-4 text-center">
+        <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">
-          Confirmar Exclusão
-        </h2>
-        <p class="text-gray-600 mb-6">
-          Tem certeza que deseja excluir o evento
-          <span id="nomeEventoConfirm" class="font-bold text-red-600"></span>?
-        </p>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Confirmar Exclusão</h2>
+        <p class="text-gray-600 mb-6">Tem certeza que deseja excluir o evento <span id="nomeEventoConfirm" class="font-bold text-red-600"></span>?</p>
         <div class="flex gap-3">
-          <button
-            onclick="closeConfirmModal()"
-            class="flex-1 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-semibold"
-          >
-            Cancelar
-          </button>
-          <button
-            id="btnConfirmarExclusaoFinal"
-            class="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-lg transition font-semibold"
-          >
-            Excluir
-          </button>
+          <button onclick="closeConfirmModal()" class="flex-1 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-semibold">Cancelar</button>
+          <button id="btnConfirmarExclusaoFinal" class="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-lg transition font-semibold">Excluir</button>
         </div>
       </div>
     </div>
 
     <script>
       (function () {
-        // ===============================
-        // CONFIGURAÇÃO
-        // ===============================
-        const API_URL =
-          typeof API_URL_BASE !== "https://script.google.com/macros/s/AKfycbydL9Fj-dOGNQ3gtqHGMBAQ8z4EVCaAbhCZqT9CwNsNAZ9gPSIBOqYIexIDXtT6fsloDQ/exec"
-            ? API_URL_BASE
-            : "http://localhost:3000/api";
+        // CORREÇÃO 1: Definição limpa da URL da API do Google Apps Script
+        const API_URL = "https://script.google.com/macros/s/AKfycbydL9Fj-dOGNQ3gtqHGMBAQ8z4EVCaAbhCZqT9CwNsNAZ9gPSIBOqYIexIDXtT6fsloDQ/exec";
 
         const tbody = document.getElementById("tabelaEventos");
         const statusDiv = document.getElementById("statusEventos");
         const loadingOverlay = document.getElementById("loadingOverlay");
         const loadingText = document.getElementById("loadingText");
 
-        let userEmail = localStorage.getItem("userEmail") || "";
-        let userRole = localStorage.getItem("userRole") || "";
+        let userEmail = localStorage.getItem("userEmail") || "vilelamn@gmail.com";
+        let userRole = localStorage.getItem("userRole") || "ADMINISTRADOR";
 
-        // Funções de controle do Modal mapeadas globalmente
+        // Cache local para os eventos carregados (evita requisições extras ao editar)
+        let eventosCache = [];
+
         window.openModalEventos = function () {
           document.getElementById("idEvento").value = "";
           document.getElementById("formEvento").reset();
-          document.getElementById("modalTitleEvento").textContent =
-            "Novo Evento";
+          document.getElementById("modalTitleEvento").textContent = "Novo Evento";
           document.getElementById("btnExcluirEvento").classList.add("hidden");
           document.getElementById("eventoModal").classList.add("active");
         };
@@ -429,9 +221,6 @@
           document.getElementById("eventoModal").classList.remove("active");
         };
 
-        // ===============================
-        // UTILITÁRIOS
-        // ===============================
         function mostrarLoading(texto = "Processando...") {
           if (!loadingOverlay) return;
           loadingText.textContent = texto;
@@ -449,16 +238,16 @@
             const [d, m, y] = dataStr.split("/");
             return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
           }
+          // Se já for uma string de data longa ISO, tenta fatiar para YYYY-MM-DD
+          if (dataStr.includes("T")) return dataStr.split("T")[0];
           return dataStr;
         }
 
         function exibirSucesso(msg) {
           const successMsg = document.getElementById("successMessage");
           const modal = document.getElementById("successModal");
-
           if (successMsg) successMsg.textContent = msg;
           if (!modal) return;
-
           modal.classList.add("active");
           setTimeout(() => modal.classList.remove("active"), 2000);
         }
@@ -468,47 +257,39 @@
             alert("Link ainda não gerado para este evento.");
             return;
           }
-          navigator.clipboard
-            .writeText(url)
+          navigator.clipboard.writeText(url)
             .then(() => exibirSucesso("Link copiado!"))
             .catch(() => alert("Erro ao copiar link."));
         };
 
-        // ===============================
-        // CARREGAR TABELA
-        // ===============================
+        // CORREÇÃO 2: Carregar dados enviando parâmetros no GET aceitos pelo GAS
         window.carregarTabela = async function () {
           if (!tbody) return;
           tbody.innerHTML = "";
           if (statusDiv) statusDiv.classList.remove("hidden");
 
           try {
-            const url = `${API_URL}/eventos?email=${encodeURIComponent(userEmail)}&role=${encodeURIComponent(userRole)}`;
+            // Enviamos a "acao" na URL (GET) para o processarRequisicao identificar
+            const url = `${API_URL}?acao=listarEventos&email=${encodeURIComponent(userEmail)}&role=${encodeURIComponent(userRole)}`;
             const response = await fetch(url);
-
             if (!response.ok) throw new Error("Erro na resposta do servidor.");
-            const lista = await response.json();
+            
+            const res = await response.json();
+            
+            // Tratamento caso o back-end retorne { success: true, data: [...] }
+            const lista = Array.isArray(res) ? res : (res.data || []);
+            eventosCache = lista; // Salvamos no cache
 
-            if (!Array.isArray(lista) || lista.length === 0) {
-              tbody.innerHTML = `
-                <tr>
-                  <td colspan="7" class="p-10 text-center text-gray-500">
-                    Nenhum evento encontrado.
-                  </td>
-                </tr>`;
+            if (lista.length === 0) {
+              tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-gray-500">Nenhum evento encontrado.</td></tr>`;
               return;
             }
 
             lista.forEach((ev) => {
               const tr = document.createElement("tr");
-              tr.className =
-                "hover:bg-gray-50 transition border-b border-gray-100";
-
+              tr.className = "hover:bg-gray-50 transition border-b border-gray-100";
               const status = ev.status || "ABERTO";
-              const badgeClass =
-                status === "ABERTO"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700";
+              const badgeClass = status === "ABERTO" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700";
 
               tr.innerHTML = `
                 <td class="px-6 py-4 font-bold text-gray-800">${ev.eventyname || "-"}</td>
@@ -516,13 +297,11 @@
                 <td class="px-6 py-4 text-gray-600">${ev.eventdate || "-"}</td>
                 <td class="hidden md:table-cell px-6 py-4 text-gray-600">${ev.eventhour || "-"}</td>
                 <td class="hidden md:table-cell px-6 py-4 text-center text-gray-600">${ev.esteemed_guests || 0}</td>
-                <td class="px-6 py-4 text-center">
-                  <span class="status-badge ${badgeClass}">${status}</span>
-                </td>
+                <td class="px-6 py-4 text-center"><span class="status-badge ${badgeClass}">${status}</span></td>
                 <td class="px-6 py-4 text-center">
                   <div class="flex justify-center gap-3">
-                    <button onclick="editarEvento('${ev.idevento}')" class="text-indigo-600">✏️</button>
-                    <button onclick="copiarLinkEvento('${ev.url || ""}')" class="text-blue-600">🔗</button>
+                    <button onclick="editarEvento('${ev.idevento}')" class="text-indigo-600 hover:scale-110 transition">✏️</button>
+                    <button onclick="copiarLinkEvento('${ev.url || ""}')" class="text-blue-600 hover:scale-110 transition">🔗</button>
                   </div>
                 </td>
               `;
@@ -530,39 +309,36 @@
             });
           } catch (erro) {
             console.error("Erro geral:", erro);
-            tbody.innerHTML = `
-              <tr>
-                <td colspan="7" class="p-10 text-center text-red-500">
-                  Erro ao conectar com o servidor de eventos.
-                </td>
-              </tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-red-500">Erro ao conectar com o servidor de eventos.</td></tr>`;
           } finally {
             if (statusDiv) statusDiv.classList.add("hidden");
           }
         };
 
-        // ===============================
-        // SALVAR EVENTO
-        // ===============================
+        // CORREÇÃO 3: Salvar enviando a estrutura unificada para o POST do seu Code.gs
         window.salvarEvento = async function () {
-          const payload = {
+          const dados = {
             idevento: document.getElementById("idEvento").value,
             eventyname: document.getElementById("nomeEvento").value,
             eventdate: document.getElementById("dataEvento").value,
             eventhour: document.getElementById("horaEvento").value,
             eventlocation: document.getElementById("localEvento").value,
             hosts: document.getElementById("anfitrioesEvento").value,
-            emailanfitriao: document.getElementById("emailAnfitriaoEvento")
-              .value,
+            emailanfitriao: document.getElementById("emailAnfitriaoEvento").value,
             esteemed_guests: document.getElementById("estimativaEvento").value,
             status: document.getElementById("statusEvento").value,
-            userEmail,
+            userEmail: userEmail
+          };
+
+          const payload = {
+            acao: 'salvarEvento', // Identificador da rota no seu switch/case do GAS
+            dados: dados
           };
 
           mostrarLoading("Salvando evento...");
 
           try {
-            const response = await fetch(`${API_URL}/eventos`, {
+            const response = await fetch(API_URL, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(payload),
@@ -576,7 +352,7 @@
             }
 
             closeModalEvento();
-            exibirSucesso("Evento saved com sucesso!");
+            exibirSucesso("Evento salvo com sucesso!");
             await carregarTabela();
           } catch (e) {
             alert("Erro de comunicação ao salvar o evento.");
@@ -585,54 +361,37 @@
           }
         };
 
-        // ===============================
-        // EDITAR EVENTO
-        // ===============================
-        window.editarEvento = async function (id) {
-          mostrarLoading("Buscando evento...");
-
-          try {
-            const response = await fetch(
-              `${API_URL}/eventos/${id}?email=${encodeURIComponent(userEmail)}`,
-            );
-            const ev = await response.json();
-
-            document.getElementById("idEvento").value = ev.idevento;
-            document.getElementById("nomeEvento").value = ev.eventyname;
-            document.getElementById("dataEvento").value = formatarDataParaInput(
-              ev.eventdate,
-            );
-            document.getElementById("horaEvento").value = ev.eventhour || "";
-            document.getElementById("localEvento").value = ev.eventlocation;
-            document.getElementById("anfitrioesEvento").value = ev.hosts || "";
-            document.getElementById("emailAnfitriaoEvento").value =
-              ev.emailanfitriao || "";
-            document.getElementById("estimativaEvento").value =
-              ev.esteemed_guests || "";
-            document.getElementById("statusEvento").value = ev.status;
-
-            document.getElementById("modalTitleEvento").textContent =
-              "Editar Evento";
-            document
-              .getElementById("btnExcluirEvento")
-              .classList.remove("hidden");
-            document.getElementById("eventoModal").classList.add("active");
-          } catch {
-            alert("Erro ao buscar dados do evento selecionado.");
-          } finally {
-            esconderLoading();
+        // CORREÇÃO 4: Busca os dados direto do cache local, poupando requisições lentas
+        window.editarEvento = function (id) {
+          const ev = eventosCache.find(item => item.idevento === id);
+          
+          if (!ev) {
+            alert("Erro ao buscar dados do evento selecionado localmente.");
+            return;
           }
+
+          document.getElementById("idEvento").value = ev.idevento || "";
+          document.getElementById("nomeEvento").value = ev.eventyname || "";
+          document.getElementById("dataEvento").value = formatarDataParaInput(ev.eventdate);
+          document.getElementById("horaEvento").value = ev.eventhour || "";
+          document.getElementById("localEvento").value = ev.eventlocation || "";
+          document.getElementById("anfitrioesEvento").value = ev.hosts || "";
+          document.getElementById("emailAnfitriaoEvento").value = ev.emailanfitriao || "";
+          document.getElementById("estimativaEvento").value = ev.esteemed_guests || "";
+          document.getElementById("statusEvento").value = ev.status || "ABERTO";
+
+          document.getElementById("modalTitleEvento").textContent = "Editar Evento";
+          document.getElementById("btnExcluirEvento").classList.remove("hidden");
+          document.getElementById("eventoModal").classList.add("active");
         };
 
-        // ===============================
-        // DELETAR EVENTO (OPCIONAL/PREPARADO)
-        // ===============================
+        // CORREÇÃO 5: Deletar usando método POST com ação específica para o GAS
         window.deletarEvento = function () {
           const id = document.getElementById("idEvento").value;
           const nome = document.getElementById("nomeEvento").value;
           if (!id) return;
-          document.getElementById("nomeEventoConfirm").textContent =
-            `"${nome}"`;
+          
+          document.getElementById("nomeEventoConfirm").textContent = `"${nome}"`;
           const modalConfirm = document.getElementById("confirmDeleteModal");
           modalConfirm.classList.add("active");
 
@@ -646,9 +405,17 @@
           window.closeConfirmModal();
           mostrarLoading("Excluindo evento...");
 
+          const payload = {
+            acao: 'deletarEvento',
+            dados: { idevento: id, userEmail: userEmail }
+          };
+
           try {
-            const response = await fetch(`${API_URL}/eventos/${id}`, {
-              method: "DELETE",
+            // Modificado de DELETE para POST, que o Apps Script suporta nativamente
+            const response = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
             });
             const res = await response.json();
 
@@ -667,9 +434,7 @@
         }
 
         window.closeConfirmModal = function () {
-          document
-            .getElementById("confirmDeleteModal")
-            .classList.remove("active");
+          document.getElementById("confirmDeleteModal").classList.remove("active");
         };
 
         window.voltarParaDashboard = function () {
