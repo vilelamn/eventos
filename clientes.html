@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Presença - Cerimonial Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .loader {
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #4f46e5;
+        border-radius: 50%;
+        width: 3rem;
+        height: 3rem;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Ajuste para rolagem suave no mobile */
+      .overflow-x-auto {
+        scroll-behavior: smooth;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 min-h-screen">
+    <div
+      id="loadingOverlay"
+      class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50"
+    >
+      <div class="flex flex-col items-center">
+        <div class="loader mb-4"></div>
+        <span
+          class="text-indigo-600 font-black text-[10px] uppercase tracking-[0.2em]"
+          >Sincronizando Lista...</span
+        >
+      </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-8">
+      <header
+        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4"
+      >
+        <div>
+          <h2 class="text-3xl font-black text-slate-800 tracking-tighter">
+            Lista de Convidados
+          </h2>
+          <div class="flex items-center gap-2 mt-1">
+            <span
+              class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"
+            ></span>
+            <p
+              id="subtitulo-status"
+              class="text-slate-500 text-[10px] font-bold uppercase tracking-widest"
+            >
+              Identificando acesso...
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-2 w-full md:w-auto">
+          <button
+            onclick="carregarTudoClientes()"
+            class="flex-1 md:flex-none bg-indigo-600 text-white px-6 py-3 rounded-2xl shadow-lg shadow-indigo-100 font-bold text-xs hover:bg-indigo-700 active:scale-95 transition-all"
+          >
+            🔄 ATUALIZAR
+          </button>
+          <button
+            onclick="voltarParaDashboard()"
+            class="flex-1 md:flex-none px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs hover:bg-slate-50 active:scale-95 transition-all"
+          >
+            ◀ PAINEL
+          </button>
+        </div>
+      </header>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <p
+            class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"
+          >
+            Confirmados
+          </p>
+          <p
+            id="total-confirmados"
+            class="text-3xl font-black text-indigo-600 tracking-tighter"
+          >
+            --
+          </p>
+        </div>
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <p
+            class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"
+          >
+            Na Festa
+          </p>
+          <p
+            id="total-na-festa"
+            class="text-3xl font-black text-emerald-500 tracking-tighter"
+          >
+            --
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100"
+      >
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr
+                class="bg-slate-50/50 text-slate-400 text-[10px] uppercase font-black tracking-widest border-b border-slate-100"
+              >
+                <th class="p-5">Nome do Convidado</th>
+                <th class="p-5">Telefone</th>
+                <th class="p-5 text-center">Status</th>
+                <th class="p-5 text-right">Horário</th>
+              </tr>
+            </thead>
+            <tbody
+              id="lista-corpo"
+              class="divide-y divide-slate-50 text-slate-700"
+            ></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="mt-8 flex justify-center">
+        <button
+          onclick="enviarEmailsQrCode()"
+          class="group relative flex items-center gap-3 bg-emerald-600 text-white px-8 py-4 rounded-2xl shadow-xl shadow-emerald-200 font-black text-xs uppercase tracking-widest hover:bg-emerald-700 hover:-translate-y-1 transition-all active:scale-95"
+        >
+          <span>📧 Enviar Convites para Todos</span>
+          <div
+            class="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center group-hover:rotate-12 transition-transform"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-3 w-3"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="3"
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+              />
+            </svg>
+          </div>
+        </button>
+      </div>
+    </main>
+
+    <script>
+      (function () {
+        let userEmailClientes = "";
+        const corpo = document.getElementById("lista-corpo");
+
+        // MUDANÇA AQUI: Coleta a URL base da API global do index.html ou usa fallback
+        const API_URL =
+          window.parent.API_URL_BASE ||
+          window.API_URL_BASE ||
+          "SUA_URL_DO_GOOGLE_APPS_SCRIPT_AQUI";
+
+        function init() {
+          // Busca credenciais do Dashboard (Pai) ou LocalStorage
+          userEmailClientes =
+            (window.parent && window.parent.loggedInUserEmail) ||
+            localStorage.getItem("userEmail") ||
+            "";
+
+          if (userEmailClientes && userEmailClientes.includes("@")) {
+            userEmailClientes = userEmailClientes.toLowerCase().trim();
+            const subtitulo = document.getElementById("subtitulo-status");
+            if (subtitulo)
+              subtitulo.innerText = "Anfitrião: " + userEmailClientes;
+
+            carregarTudoClientes();
+          } else {
+            if (corpo)
+              corpo.innerHTML =
+                '<tr><td colspan="4" class="p-10 text-center text-red-400 font-bold">ERRO: E-mail do anfitrião não identificado.</td></tr>';
+          }
+        }
+
+        /**
+         * MUDANÇA AQUI: BUSCAR DADOS DO SERVIDOR VIA FETCH (POST)
+         */
+        window.carregarTudoClientes = async function () {
+          const overlay = document.getElementById("loadingOverlay");
+          if (overlay) overlay.style.display = "flex";
+
+          console.log(
+            "Chamando servidor via Fetch para o e-mail:",
+            userEmailClientes,
+          );
+
+          try {
+            const response = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain" },
+              body: JSON.stringify({
+                acao: "obterListaDiretaAnfitriao",
+                emailAnfitriao: userEmailClientes,
+              }),
+            });
+
+            const res = await response.json();
+            console.log("Resposta recebida via Fetch:", res);
+
+            if (overlay) overlay.style.display = "none";
+
+            const listaParaRenderizar =
+              res.convidados || (Array.isArray(res) ? res : []);
+
+            if (listaParaRenderizar.length > 0) {
+              renderizarTabelaClientes(listaParaRenderizar);
+              atualizarContadoresClientes(listaParaRenderizar);
+            } else {
+              if (corpo) {
+                corpo.innerHTML =
+                  '<tr><td colspan="4" class="p-10 text-center text-slate-400">Nenhum convidado encontrado para este anfitrião.</td></tr>';
+              }
+            }
+          } catch (err) {
+            if (overlay) overlay.style.display = "none";
+            console.error(err);
+            alert("Erro técnico ao listar convidados: " + err.message);
+          }
+        };
+
+        /**
+         * RENDERIZAR TABELA
+         */
+        function renderizarTabelaClientes(convidados) {
+          const corpoTabela = document.getElementById("lista-corpo");
+          if (!corpoTabela) return;
+          corpoTabela.innerHTML = "";
+
+          convidados.forEach((c) => {
+            const nome = c.guestname || c.Nome || "Sem nome";
+            const fone = c.phone || c.Telefone || "-";
+            const statusRaw = (c.status || c.Status || "")
+              .toString()
+              .toUpperCase()
+              .trim();
+            const horaEntrada = c.checkindatehour || "--:--";
+
+            const isPresente = statusRaw === "PRESENTE";
+            const isConfirmado = statusRaw === "CONFIRMADO";
+
+            let corBadge = "bg-slate-100 text-slate-400";
+            let clique = "";
+
+            if (isPresente) {
+              corBadge = "bg-emerald-500 text-white shadow-sm";
+            } else if (isConfirmado) {
+              corBadge =
+                "bg-indigo-100 text-indigo-600 border border-indigo-200 cursor-pointer hover:bg-indigo-600 hover:text-white";
+              clique = `onclick="realizarCheckInClientes('${fone}', this)"`;
+            }
+
+            const tr = document.createElement("tr");
+            tr.className = `hover:bg-slate-50/80 transition-colors ${isPresente ? "bg-emerald-50/20" : ""}`;
+            tr.innerHTML = `
+                <td class="p-5 font-bold text-slate-800 text-sm">${nome}</td>
+                <td class="p-5 text-slate-500 text-xs">${fone}</td>
+                <td class="p-5 text-center">
+                    <span ${clique} class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${corBadge}">
+                        ${statusRaw || "PENDENTE"}
+                    </span>
+                </td>
+                <td class="p-5 text-right font-mono text-[10px] ${isPresente ? "text-emerald-600 font-bold" : "text-slate-300"}">
+                    ${horaEntrada}
+                </td>
+            `;
+            corpoTabela.appendChild(tr);
+          });
+        }
+
+        /**
+         * ATUALIZAR NÚMEROS DO TOPO
+         */
+        function atualizarContadoresClientes(lista) {
+          let confirmados = 0;
+          let naFesta = 0;
+
+          if (!lista || !Array.isArray(lista)) return;
+
+          lista.forEach((c) => {
+            const s = String(c.status || c.Status || "")
+              .toUpperCase()
+              .trim();
+            if (s === "PRESENTE") {
+              naFesta++;
+            } else if (s === "CONFIRMADO") {
+              confirmados++;
+            }
+          });
+
+          const elConfirmados = document.getElementById("total-confirmados");
+          const elNaFesta = document.getElementById("total-na-festa");
+
+          if (elConfirmados) elConfirmados.innerText = confirmados;
+          if (elNaFesta) elNaFesta.innerText = naFesta;
+        }
+
+        /**
+         * MUDANÇA AQUI: REALIZAR CHECK-IN VIA FETCH
+         */
+        window.realizarCheckInClientes = async function (telefone, elemento) {
+          if (!confirm("Confirmar a entrada deste convidado?")) return;
+
+          const textoOriginal = elemento.innerText;
+          elemento.innerText = "SINC...";
+
+          try {
+            const response = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain" },
+              body: JSON.stringify({
+                acao: "fazerCheckInNoServidor",
+                telefone: telefone,
+              }),
+            });
+
+            const res = await response.json();
+
+            if (res.success) {
+              carregarTudoClientes();
+            } else {
+              elemento.innerText = textoOriginal;
+              alert("Erro: " + res.mensagem);
+            }
+          } catch (err) {
+            elemento.innerText = textoOriginal;
+            alert("Erro de conexão ao realizar check-in: " + err.message);
+          }
+        };
+
+        /**
+         * VOLTAR PARA O DASHBOARD
+         */
+        window.voltarParaDashboard = function () {
+          if (window.parent && window.parent.voltarParaDashboard) {
+            window.parent.voltarParaDashboard();
+          } else {
+            const view = document.getElementById("spa-container");
+            if (view) view.style.display = "none";
+            const dash = document.getElementById("dashboard-view");
+            if (dash) dash.style.display = "block";
+          }
+        };
+
+        /**
+         * MUDANÇA AQUI: ENVIAR CONVITES EM MASSA VIA FETCH
+         */
+        window.enviarEmailsQrCode = async function () {
+          if (
+            !confirm(
+              "Deseja enviar os convites com QR Code para todos os convidados confirmados?",
+            )
+          ) {
+            return;
+          }
+
+          const overlay = document.getElementById("loadingOverlay");
+          if (overlay) overlay.style.display = "flex";
+
+          try {
+            const response = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain" },
+              body: JSON.stringify({
+                acao: "enviarConvitesQrCode",
+                emailAnfitriao: userEmailClientes,
+              }),
+            });
+
+            const res = await response.json();
+            if (overlay) overlay.style.display = "none";
+
+            if (res && res.success) {
+              alert(res.mensagem || "E-mails enviados com sucesso!");
+            } else {
+              alert(res.mensagem || "Erro ao enviar e-mails.");
+            }
+          } catch (err) {
+            if (overlay) overlay.style.display = "none";
+            alert("Erro técnico ao disparar e-mails: " + err.message);
+          }
+        };
+
+        // MONITOR DE VISIBILIDADE (VIGIA)
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.attributeName === "style") {
+              const target = mutation.target;
+              if (target.style.display !== "none") {
+                init();
+              }
+            }
+          });
+        });
+
+        const targetNode =
+          document.getElementById("spa-container") || document.body;
+        observer.observe(targetNode, {
+          attributes: true,
+          attributeFilter: ["style"],
+        });
+
+        // Início imediato na primeira carga
+        init();
+      })();
+    </script>
+  </body>
+</html>

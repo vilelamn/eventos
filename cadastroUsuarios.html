@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cadastro de Usuários - MeuEvento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #f3f4f6;
+      }
+      .loader {
+        border: 4px solid #c7d2fe;
+        border-top: 4px solid #4f46e5;
+        border-radius: 50%;
+        width: 3rem;
+        height: 3rem;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+      }
+      .modal-overlay.active {
+        display: flex;
+      }
+
+      .status-badge {
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 min-h-screen">
+    <div
+      id="loadingOverlay"
+      class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden"
+    >
+      <div class="bg-white p-6 rounded-xl flex flex-col items-center shadow-xl">
+        <div class="loader mb-4"></div>
+        <span id="loadingText" class="text-gray-700 font-semibold"
+          >Processando...</span
+        >
+      </div>
+    </div>
+
+    <div class="p-4 sm:p-8" id="usuarios-view">
+      <div class="max-w-6xl mx-auto">
+        <header
+          class="mb-8 p-4 md:p-6 bg-white rounded-xl shadow-lg flex flex-col md:flex-row justify-between items-center border-l-8 border-indigo-600 gap-4"
+        >
+          <div>
+            <h1
+              class="text-2xl md:text-3xl font-bold text-gray-800 text-center md:text-left"
+            >
+              Cadastro de Usuário
+            </h1>
+            <div class="text-sm text-gray-500 mt-1" id="usuario-conectado">
+              Logado como:
+              <span id="email-display" class="font-semibold text-indigo-600"
+                >---</span
+              >
+            </div>
+          </div>
+
+          <div class="flex gap-2 md:gap-3 w-full md:w-auto justify-center">
+            <button
+              id="btnNovoFuncionario"
+              onclick="openModalFuncionario()"
+              class="hidden px-3 py-2 md:px-5 md:py-2.5 bg-indigo-600 text-white text-sm md:text-base rounded-lg shadow hover:bg-indigo-700 transition flex items-center gap-2 whitespace-nowrap"
+            >
+              <span>Inserir Usuário</span>
+            </button>
+
+            <button
+              onclick="voltarParaDashboard()"
+              class="px-3 py-2 md:px-4 md:py-2 border border-indigo-600 text-indigo-600 text-sm md:text-base rounded-lg hover:bg-indigo-50 transition whitespace-nowrap"
+            >
+              ◀ Painel
+            </button>
+          </div>
+        </header>
+
+        <div
+          class="bg-white rounded-xl shadow-xl overflow-hidden border border-indigo-200"
+        >
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="bg-gray-50 border-b">
+                <tr>
+                  <th
+                    class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase"
+                  >
+                    Nome
+                  </th>
+                  <th
+                    class="hidden md:table-cell px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase"
+                  >
+                    Email
+                  </th>
+                  <th
+                    class="hidden md:table-cell px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase"
+                  >
+                    Telefone
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase"
+                  >
+                    Cargo
+                  </th>
+                  <th
+                    class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase"
+                  >
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody
+                id="tabelaFuncionarios"
+                class="divide-y divide-gray-100"
+              ></tbody>
+            </table>
+          </div>
+
+          <div id="statusFuncionarios" class="p-10 text-center text-gray-500">
+            <div class="flex flex-col items-center gap-3">
+              <div
+                class="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"
+              ></div>
+              <span>Sincronizando com a base de dados...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="funcionarioModal" class="modal-overlay">
+      <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md mx-4">
+        <div class="flex justify-between items-center mb-6">
+          <h2
+            id="modalTitleFuncionario"
+            class="text-2xl font-bold text-gray-800"
+          >
+            Novo Funcionário
+          </h2>
+          <button
+            onclick="closeModalFuncionario()"
+            class="text-gray-400 hover:text-gray-600 text-2xl"
+          >
+            &times;
+          </button>
+        </div>
+
+        <form
+          id="formFuncionario"
+          onsubmit="
+            event.preventDefault();
+            salvarDados();
+          "
+        >
+          <input type="hidden" id="idFuncionario" />
+
+          <div class="space-y-4">
+            <div>
+              <label
+                for="nomeFuncionario"
+                class="block text-sm font-medium text-gray-700"
+                >Nome Completo</label
+              >
+              <input
+                id="nomeFuncionario"
+                type="text"
+                required
+                class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label
+                for="emailFuncionario"
+                class="block text-sm font-medium text-gray-700"
+                >E-mail</label
+              >
+              <input
+                id="emailFuncionario"
+                type="email"
+                required
+                class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  for="telefoneFuncionario"
+                  class="block text-sm font-medium text-gray-700"
+                  >Telefone</label
+                >
+                <input
+                  id="telefoneFuncionario"
+                  type="text"
+                  class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              <div>
+                <label
+                  for="pinFuncionario"
+                  class="block text-sm font-medium text-gray-700"
+                  >PIN (Acesso)</label
+                >
+                <input
+                  id="pinFuncionario"
+                  type="text"
+                  required
+                  maxlength="4"
+                  class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                for="cargoFuncionario"
+                class="block text-sm font-medium text-gray-700"
+                >Cargo / Nível de Acesso</label
+              >
+              <select
+                id="cargoFuncionario"
+                class="w-full mt-1 border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              >
+                <option value="FUNCIONARIO">FUNCIONÁRIO</option>
+                <option value="CERIMONIALISTA">CERIMONIALISTA</option>
+                <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+                <option value="CLIENTE">CLIENTE</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-8 flex flex-wrap gap-3">
+            <button
+              id="btnExcluirFuncionario"
+              type="button"
+              onclick="deletarFuncionario()"
+              class="hidden px-6 py-2.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition font-semibold"
+            >
+              Excluir
+            </button>
+
+            <div class="flex-1 flex gap-3">
+              <button
+                type="button"
+                onclick="closeModalFuncionario()"
+                class="flex-1 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg transition"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+          <p id="mensagemFeedback" class="text-center mt-4 text-sm"></p>
+        </form>
+      </div>
+    </div>
+
+    <div id="successModal" class="modal-overlay">
+      <div
+        class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm mx-4 text-center"
+      >
+        <div
+          class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-10 w-10"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="3"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Sucesso!</h2>
+        <p id="successMessage" class="text-gray-600">
+          Operação realizada com sucesso.
+        </p>
+        <div class="mt-6 text-xs text-gray-400 italic">
+          Fechando automaticamente em 5s...
+        </div>
+      </div>
+    </div>
+
+    <div id="confirmDeleteModal" class="modal-overlay">
+      <div
+        class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm mx-4 text-center"
+      >
+        <div
+          class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-10 w-10"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">
+          Confirmar Exclusão
+        </h2>
+        <p class="text-gray-600 mb-6">
+          Tem certeza que deseja excluir o funcionário
+          <span
+            id="nomeFuncionarioConfirm"
+            class="font-bold text-red-600"
+          ></span
+          >? Esta ação não pode ser desfeita.
+        </p>
+        <div class="flex gap-3">
+          <button
+            onclick="closeConfirmModal()"
+            class="flex-1 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-semibold"
+          >
+            Cancelar
+          </button>
+          <button
+            id="btnConfirmarExclusaoFinal"
+            class="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-lg transition font-semibold"
+          >
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const tbody = document.getElementById("tabelaFuncionarios");
+        const statusDiv = document.getElementById("statusFuncionarios");
+        const loading = document.getElementById("loadingOverlay");
+        const loadingText = document.getElementById("loadingText");
+
+        let userEmail = "";
+        let userRole = "";
+
+        // Endereço central da API da Planilha (Defina aqui ou herde de window.parent)
+        const API_URL =
+          window.parent.API_URL_BASE ||
+          window.API_URL_BASE ||
+          "SUA_URL_DO_GOOGLE_APPS_SCRIPT_AQUI";
+
+        function init() {
+          // Captura variáveis tanto se rodar dentro de Iframe (SPA) quanto standalone (localStorage)
+          userEmail =
+            window.parent.loggedInUserEmail ||
+            localStorage.getItem("userEmail") ||
+            "admin@evento.com";
+          userRole =
+            window.parent.loggedInUserRole ||
+            localStorage.getItem("userRole") ||
+            "ADMINISTRADOR";
+
+          if (userEmail) {
+            const display = document.getElementById("email-display");
+            if (display) {
+              display.textContent = userEmail;
+            }
+
+            const btnNovo = document.getElementById("btnNovoFuncionario");
+            if (btnNovo) {
+              btnNovo.classList.remove("hidden");
+            }
+
+            carregarDadosTabela();
+          } else {
+            alert("Sessão inválida. Faça login novamente.");
+            document.getElementById("usuarios-view").style.opacity = "0.3";
+            document.getElementById("usuarios-view").style.pointerEvents =
+              "none";
+          }
+        }
+
+        if (typeof carregandoDados === "undefined") {
+          var carregandoDados = false;
+        }
+
+        // BUSCAR LISTA COMPLETA VIA FETCH ASYNC/AWAIT
+        window.carregarDadosTabela = async function () {
+          if (carregandoDados) return;
+          carregandoDados = true;
+
+          statusDiv.classList.remove("hidden");
+
+          try {
+            const response = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain" },
+              body: JSON.stringify({
+                acao: "listarFuncionariosTabela",
+                email: userEmail,
+                role: userRole,
+              }),
+            });
+
+            const lista = await response.json();
+            carregandoDados = false;
+            statusDiv.classList.add("hidden");
+            tbody.innerHTML = "";
+
+            if (!lista || lista.length === 0) {
+              statusDiv.innerHTML = "Nenhum funcionário encontrado.";
+              statusDiv.classList.remove("hidden");
+              return;
+            }
+
+            lista.forEach((f) => {
+              const tr = document.createElement("tr");
+              tr.className =
+                "hover:bg-gray-50 transition border-b border-gray-100";
+
+              const roleStr = String(f.role || "FUNCIONARIO");
+              const badgeClass =
+                roleStr === "ADMINISTRADOR"
+                  ? "bg-purple-100 text-purple-700"
+                  : roleStr === "CERIMONIALISTA"
+                    ? "bg-blue-100 text-blue-700"
+                    : roleStr === "CLIENTE"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-100 text-gray-600";
+
+              tr.innerHTML = `
+            <td class="px-6 py-4 font-medium text-gray-800">${f.name || "---"}</td>
+            <td class="hidden md:table-cell px-6 py-4 text-gray-600">${f.email || "---"}</td>
+            <td class="hidden md:table-cell px-6 py-4 text-gray-600">${f.phone || "-"}</td>
+            <td class="px-6 py-4"><span class="status-badge ${badgeClass}">${roleStr}</span></td>
+            <td class="px-6 py-4 text-center">
+              <button onclick="editarFuncionario('${f.id_username}')" class="text-indigo-600 hover:text-indigo-900 font-semibold p-2">✏️</button>
+            </td>`;
+
+              tbody.appendChild(tr);
+            });
+          } catch (err) {
+            carregandoDados = false;
+            statusDiv.innerHTML = `<span class="text-red-500">Erro ao sincronizar: ${err.message || err}</span>`;
+          }
+        };
+
+        // GRAVAR/ATUALIZAR DADOS VIA FETCH
+        window.salvarDados = async function () {
+          const btnSalvar = document.querySelector(
+            '#formFuncionario button[type="submit"]',
+          );
+          const successModal = document.getElementById("successModal");
+          const successMsg = document.getElementById("successMessage");
+
+          btnSalvar.disabled = true;
+          if (loadingText) loadingText.textContent = "Aguarde, salvando...";
+          loading.classList.remove("hidden");
+
+          const payload = {
+            id_username: document.getElementById("idFuncionario").value,
+            name: document.getElementById("nomeFuncionario").value,
+            email: document.getElementById("emailFuncionario").value,
+            phone: document.getElementById("telefoneFuncionario").value,
+            pin: document.getElementById("pinFuncionario").value,
+            role: document.getElementById("cargoFuncionario").value,
+            cadastrado_por: userEmail,
+          };
+
+          try {
+            const response = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain" },
+              body: JSON.stringify({
+                acao: "salvarFuncionario",
+                dados: payload,
+              }),
+            });
+
+            const res = await response.json();
+            loading.classList.add("hidden");
+            btnSalvar.disabled = false;
+
+            if (res.success) {
+              closeModalFuncionario();
+              successMsg.textContent = res.message;
+              successModal.classList.add("active");
+              carregarDadosTabela();
+
+              setTimeout(() => {
+                successModal.classList.remove("active");
+              }, 5000);
+            } else {
+              document.getElementById("mensagemFeedback").textContent =
+                res.message;
+              document.getElementById("mensagemFeedback").className =
+                "text-center mt-4 text-sm text-red-600";
+            }
+          } catch (err) {
+            loading.classList.add("hidden");
+            btnSalvar.disabled = false;
+            document.getElementById("mensagemFeedback").textContent =
+              "Erro na comunicação: " + err;
+            document.getElementById("mensagemFeedback").className =
+              "text-center mt-4 text-sm text-red-600";
+          }
+        };
+
+        // EDICAO - BUSCAR CADASTRO ESPECÍFICO
+        window.editarFuncionario = async function (id) {
+          if (loadingText) loadingText.textContent = "Processando...";
+          loading.classList.remove("hidden");
+
+          try {
+            const response = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain" },
+              body: JSON.stringify({
+                acao: "getFuncionarioById",
+                id: id,
+              }),
+            });
+
+            const f = await response.json();
+            loading.classList.add("hidden");
+
+            if (f) {
+              document.getElementById("idFuncionario").value = f.id_username;
+              document.getElementById("nomeFuncionario").value = f.name;
+              document.getElementById("emailFuncionario").value = f.email;
+              document.getElementById("telefoneFuncionario").value = f.phone;
+              document.getElementById("pinFuncionario").value = f.pin;
+              document.getElementById("cargoFuncionario").value = f.role;
+              document.getElementById("modalTitleFuncionario").textContent =
+                "Editar Funcionário";
+              document
+                .getElementById("btnExcluirFuncionario")
+                .classList.remove("hidden");
+              document
+                .getElementById("funcionarioModal")
+                .classList.add("active");
+            }
+          } catch (err) {
+            loading.classList.add("hidden");
+            alert("Erro ao resgatar informações: " + err);
+          }
+        };
+
+        window.deletarFuncionario = function () {
+          const id = document.getElementById("idFuncionario").value;
+          const nome = document.getElementById("nomeFuncionario").value;
+          if (!id) return;
+          document.getElementById("nomeFuncionarioConfirm").textContent =
+            `"${nome}"`;
+          const modalConfirm = document.getElementById("confirmDeleteModal");
+          modalConfirm.classList.add("active");
+
+          const btnFinal = document.getElementById("btnConfirmarExclusaoFinal");
+          btnFinal.onclick = function () {
+            executarExclusaoNoServidor(id);
+          };
+        };
+
+        // REMOÇÃO VIA FETCH
+        async function ejecutarExclusaoNoServidor(id) {
+          closeConfirmModal();
+          if (loadingText) loadingText.textContent = "Aguarde, excluindo...";
+          loading.classList.remove("hidden");
+
+          try {
+            const response = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain" },
+              body: JSON.stringify({
+                acao: "excluirFuncionarioNoServidor",
+                id: id,
+              }),
+            });
+
+            const res = await response.json();
+            loading.classList.add("hidden");
+
+            if (res.success) {
+              closeModalFuncionario();
+              document.getElementById("successMessage").textContent =
+                "Funcionário excluído com sucesso!";
+              document.getElementById("successModal").classList.add("active");
+              carregarDadosTabela();
+              setTimeout(() => {
+                document
+                  .getElementById("successModal")
+                  .classList.remove("active");
+              }, 3000);
+            } else {
+              alert("Erro reportado pelo servidor: " + res.message);
+            }
+          } catch (err) {
+            loading.classList.add("hidden");
+            alert("Falha de rede ao excluir: " + err);
+          }
+        }
+
+        window.closeConfirmModal = function () {
+          document
+            .getElementById("confirmDeleteModal")
+            .classList.remove("active");
+        };
+
+        window.openModalFuncionario = function () {
+          const modal = document.getElementById("funcionarioModal");
+          const idInput = document.getElementById("idFuncionario");
+
+          if (modal) {
+            if (!idInput || !idInput.value) {
+              document.getElementById("formFuncionario").reset();
+              document.getElementById("modalTitleFuncionario").textContent =
+                "Novo Funcionário";
+              document
+                .getElementById("btnExcluirFuncionario")
+                .classList.add("hidden");
+            }
+            document.getElementById("mensagemFeedback").textContent = "";
+            modal.classList.add("active");
+          }
+        };
+
+        window.closeModalFuncionario = function () {
+          const modal = document.getElementById("funcionarioModal");
+          if (modal) {
+            modal.classList.remove("active");
+            const idInput = document.getElementById("idFuncionario");
+            if (idInput) idInput.value = "";
+            const form = document.getElementById("formFuncionario");
+            if (form) form.reset();
+          }
+        };
+
+        window.voltarParaDashboard = function () {
+          if (window.parent && window.parent.voltarParaDashboard) {
+            window.parent.voltarParaDashboard();
+          } else {
+            alert("Direcionando para o index/painel principal.");
+            window.location.href = "index.html";
+          }
+        };
+
+        init();
+      })();
+    </script>
+  </body>
+</html>

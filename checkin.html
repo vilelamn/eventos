@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scanner de Check-in Profissional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      src="https://unpkg.com/html5-qrcode"
+      type="text/javascript"
+    ></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap");
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #f3f4f6;
+      }
+      .loader {
+        border: 4px solid #c7d2fe;
+        border-top: 4px solid #4f46e5;
+        border-radius: 50%;
+        width: 3rem;
+        height: 3rem;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      #qrcode-reader {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        border: 4px solid white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        background: black;
+      }
+      .scan-flash {
+        animation: flash 0.5s ease-out;
+      }
+      @keyframes flash {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+          background: #4f46e5;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 min-h-screen">
+    <div
+      id="loadingOverlay"
+      class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden"
+    >
+      <div class="bg-white p-6 rounded-xl flex flex-col items-center shadow-xl">
+        <div class="loader mb-4"></div>
+        <span id="loadingText" class="text-gray-700 font-semibold"
+          >Processando...</span
+        >
+      </div>
+    </div>
+
+    <div
+      id="modalSucesso"
+      class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[60] p-4"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center border-t-8 border-green-500"
+      >
+        <div
+          class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-6"
+        >
+          <svg
+            class="h-10 w-10 text-green-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="3"
+              d="M5 13l4 4L19 7"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">
+          Check-in Realizado!
+        </h3>
+        <p class="text-gray-600 mb-8" id="modalSucessoMsg"></p>
+        <button
+          onclick="fecharModalSucesso()"
+          class="w-full py-4 bg-green-600 text-white rounded-xl font-bold shadow-lg hover:bg-green-700 transition active:scale-95 uppercase"
+        >
+          Próximo Convidado
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="modalErro"
+      class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[70] p-4"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center border-t-8 border-red-500"
+      >
+        <div
+          class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-100 mb-6"
+        >
+          <svg
+            class="h-10 w-10 text-red-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">Atenção</h3>
+        <p class="text-gray-600 mb-8 font-medium" id="modalErroMsg"></p>
+        <button
+          onclick="fecharModalErro()"
+          class="w-full py-4 bg-red-600 text-white rounded-xl font-bold shadow-lg hover:bg-red-700 transition active:scale-95 uppercase"
+        >
+          Tentar Novamente
+        </button>
+      </div>
+    </div>
+
+    <div class="p-4 sm:p-8">
+      <div class="max-w-4xl mx-auto">
+        <header
+          class="mb-8 p-4 bg-white rounded-xl shadow-lg flex flex-col md:flex-row justify-between items-center border-l-8 border-indigo-600 gap-4"
+        >
+          <div>
+            <h1 class="text-xl md:text-3xl font-bold text-gray-800">
+              Check-in Digital
+            </h1>
+            <div
+              id="diagnosticoID"
+              class="mt-1 px-2 py-1 bg-gray-100 rounded text-xs font-mono text-gray-600 inline-block"
+            >
+              Sincronizando...
+            </div>
+          </div>
+          <button
+            onclick="voltarParaDashboard()"
+            class="px-4 py-2 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 font-semibold transition"
+          >
+            ◀ Painel
+          </button>
+        </header>
+
+        <div
+          class="mb-6 bg-white p-6 rounded-2xl shadow-lg border border-indigo-200"
+        >
+          <label
+            for="event-selector"
+            class="block text-sm font-medium text-gray-700 mb-2 font-bold"
+            >EVENTO ATIVO:</label
+          >
+          <select
+            id="event-selector"
+            onchange="selecionarEvento()"
+            class="w-full p-3 border-2 border-indigo-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition bg-indigo-50 font-semibold text-indigo-900"
+          >
+            <option value="">Carregando eventos...</option>
+          </select>
+        </div>
+
+        <div id="scanner-section" class="hidden">
+          <div
+            class="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-gray-100"
+          >
+            <div id="qrcode-reader"></div>
+            <div
+              id="statusScanner"
+              class="mt-4 text-center text-sm font-bold text-indigo-600 animate-pulse uppercase tracking-widest"
+            >
+              Aguardando QR Code...
+            </div>
+          </div>
+
+          <div
+            id="dadosConvidado"
+            class="bg-white rounded-2xl shadow-2xl p-6 hidden transition-all border-2 border-indigo-500 mb-8"
+          ></div>
+          <div
+            id="actionButtons"
+            class="mt-6 flex flex-col gap-3 max-w-sm mx-auto"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let scanner = null;
+      let isScanning = true;
+      let idEventoSelecionado = null;
+      let dadosLidos = null;
+
+      // MUDANÇA AQUI: Coleta a URL base da API do App Script de forma global
+      const API_URL =
+        window.parent.API_URL_BASE ||
+        window.API_URL_BASE ||
+        "SUA_URL_DO_GOOGLE_APPS_SCRIPT_AQUI";
+
+      async function init() {
+        // MUDANÇA AQUI: Coleta e-mail e nível de acesso do localStorage sem travar nas tags <?= ?> do Google
+        const userEmail =
+          window.parent.loggedInUserEmail ||
+          localStorage.getItem("userEmail") ||
+          "";
+        const userRole =
+          window.parent.loggedInUserRole ||
+          localStorage.getItem("userRole") ||
+          "USER";
+
+        try {
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({
+              acao: "listarEventosTabela",
+              email: userEmail,
+              role: userRole,
+            }),
+          });
+
+          const lista = await response.json();
+          const select = document.getElementById("event-selector");
+          select.innerHTML =
+            '<option value="">-- Selecione o Evento para Abrir Câmera --</option>';
+
+          lista.forEach((ev) => {
+            const option = document.createElement("option");
+            option.value = ev.idevento;
+            option.textContent = ev.eventyname;
+            select.appendChild(option);
+          });
+
+          document.getElementById("diagnosticoID").innerHTML =
+            "🟢 Sistema Online";
+        } catch (err) {
+          console.error(err);
+          document.getElementById("diagnosticoID").innerHTML =
+            "🔴 Erro na Sincronização";
+        }
+      }
+
+      window.selecionarEvento = function () {
+        idEventoSelecionado = document.getElementById("event-selector").value;
+        if (idEventoSelecionado) {
+          document.getElementById("scanner-section").classList.remove("hidden");
+          iniciarScannerSempreAtivo();
+        } else {
+          document.getElementById("scanner-section").classList.add("hidden");
+        }
+      };
+
+      function iniciarScannerSempreAtivo() {
+        if (scanner) return;
+        scanner = new Html5Qrcode("qrcode-reader");
+        const config = { fps: 20, qrbox: { width: 250, height: 250 } };
+        scanner
+          .start({ facingMode: "environment" }, config, (decodedText) => {
+            if (isScanning) processarLeitura(decodedText);
+          })
+          .catch((err) => {
+            alert("Erro ao iniciar câmera traseira: " + err);
+          });
+      }
+
+      // MUDANÇA AQUI: BUSCA DADOS DO CONVIDADO VIA FETCH (POST)
+      async function processarLeitura(decodedText) {
+        isScanning = false;
+        document.getElementById("qrcode-reader").classList.add("scan-flash");
+        setTimeout(
+          () =>
+            document
+              .getElementById("qrcode-reader")
+              .classList.remove("scan-flash"),
+          500,
+        );
+
+        document.getElementById("loadingOverlay").classList.remove("hidden");
+        document.getElementById("loadingText").innerText =
+          "Validando convite...";
+
+        try {
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({
+              acao: "buscarDadosConvidado",
+              idConvidado: decodedText,
+              idEvento: idEventoSelecionado,
+            }),
+          });
+
+          const res = await response.json();
+          document.getElementById("loadingOverlay").classList.add("hidden");
+
+          if (res.success === false) {
+            throw new Error(
+              res.mensagem || "Convite inválido para este evento.",
+            );
+          }
+
+          dadosLidos = res;
+          exibirDadosConvidado(res);
+        } catch (err) {
+          document.getElementById("loadingOverlay").classList.add("hidden");
+          let msgLimpa = err.message
+            .replace("Error: ", "")
+            .replace("Erro na busca: ", "");
+          abrirModalErro(msgLimpa);
+        }
+      }
+
+      window.exibirDadosConvidado = function (dados) {
+        const div = document.getElementById("dadosConvidado");
+        const btns = document.getElementById("actionButtons");
+        div.classList.remove("hidden");
+        document.getElementById("statusScanner").classList.add("hidden");
+
+        div.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <img src="${dados.fotoUrl || "https://via.placeholder.com/150"}" class="w-24 h-24 rounded-xl border-2 border-indigo-600 object-cover shadow-md">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 leading-tight">${dados.nome}</h3>
+                        <p class="text-indigo-600 text-sm font-extrabold uppercase tracking-tighter">${dados.status}</p>
+                    </div>
+                </div>`;
+
+        if (dados.checkinFeito) {
+          div.innerHTML += `<div class="mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-center font-bold text-xs uppercase border border-red-200">⚠️ ENTRADA JÁ REGISTRADA ÀS ${dados.horaCheckin}</div>`;
+          btns.innerHTML = `<button onclick="resetScanner()" class="w-full py-4 bg-gray-800 text-white rounded-xl font-bold shadow-lg uppercase">Próximo Convidado</button>`;
+        } else {
+          btns.innerHTML = `
+                    <button onclick="confirmarEntradaFinal()" class="w-full py-4 bg-green-600 text-white rounded-xl font-bold shadow-lg hover:bg-green-700 transition active:scale-95 uppercase">Confirmar Entrada</button>
+                    <button onclick="resetScanner()" class="w-full py-2 text-gray-500 font-bold uppercase text-xs">Cancelar</button>`;
+        }
+        div.scrollIntoView({ behavior: "smooth" });
+      };
+
+      // MUDANÇA AQUI: GRAVA O CHECK-IN VIA FETCH (POST)
+      window.confirmarEntradaFinal = async function () {
+        document.getElementById("loadingOverlay").classList.remove("hidden");
+        document.getElementById("loadingText").innerText =
+          "Confirmando presença...";
+
+        try {
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({
+              acao: "processarCheckinComFoto",
+              idConvidado: dadosLidos.id,
+              idEvento: idEventoSelecionado,
+            }),
+          });
+
+          const res = await response.json();
+          document.getElementById("loadingOverlay").classList.add("hidden");
+
+          if (res.success) {
+            abrirModalSucesso(
+              "A entrada de " + dadosLidos.nome + " foi registrada!",
+            );
+          } else {
+            throw new Error(res.mensagem || "Erro ao gravar check-in.");
+          }
+        } catch (err) {
+          document.getElementById("loadingOverlay").classList.add("hidden");
+          let msgErro = err.message.replace("Error: ", "");
+          abrirModalErro(msgErro);
+        }
+      };
+
+      window.abrirModalSucesso = function (msg) {
+        document.getElementById("modalSucessoMsg").innerText = msg;
+        document
+          .getElementById("modalSucesso")
+          .classList.replace("hidden", "flex");
+      };
+
+      window.fecharModalSucesso = function () {
+        document
+          .getElementById("modalSucesso")
+          .classList.replace("flex", "hidden");
+        resetScanner();
+      };
+
+      window.abrirModalErro = function (msg) {
+        document.getElementById("modalErroMsg").innerText = msg;
+        document
+          .getElementById("modalErro")
+          .classList.replace("hidden", "flex");
+      };
+
+      window.fecharModalErro = function () {
+        document
+          .getElementById("modalErro")
+          .classList.replace("flex", "hidden");
+        resetScanner();
+      };
+
+      window.resetScanner = function () {
+        document.getElementById("dadosConvidado").classList.add("hidden");
+        document.getElementById("actionButtons").innerHTML = "";
+        document.getElementById("statusScanner").classList.remove("hidden");
+        dadosLidos = null;
+        isScanning = true;
+      };
+
+      window.voltarParaDashboard = function () {
+        if (window.parent && window.parent.voltarParaDashboard) {
+          window.parent.voltarParaDashboard();
+        } else {
+          // Fallback de SPA local
+          const view = document.getElementById("spa-container");
+          if (view) view.style.display = "none";
+          const dash = document.getElementById("dashboard-view");
+          if (dash) dash.style.display = "block";
+        }
+      };
+
+      init();
+    </script>
+  </body>
+</html>
