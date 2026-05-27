@@ -1,19 +1,19 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Dashboard de Permissões</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard de Permissões - Sistema SaaS</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;900&display=swap");
       body {
         font-family: "Inter", sans-serif;
         background-color: #f7f9fb;
       }
 
-      /* Estilos de Transição e Cards */
+      /* Estilos de Transição SPA e Cards */
       .card {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         opacity: 0;
@@ -29,491 +29,207 @@
         transform: translateY(-5px);
         box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
       }
-
-      #dashboard-view {
-        display: none;
-        opacity: 0;
-        transition: opacity 0.5s ease-out;
-      }
-      #dashboard-view.is-loaded {
-        opacity: 1;
-        display: block;
-      }
-      #login-form-container {
-        display: flex;
-      }
-
-      .spinner {
-        border: 3px solid rgba(255, 255, 255, 0.3);
-        border-top: 3px solid #fff;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        animation: spin 1s linear infinite;
-      }
-
-      @keyframes spin {
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-      #spa-container {
-        margin-top: 1rem;
-        display: none;
-      }
     </style>
-
-    <script>
-      // Configuração do Tailwind
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: "#4f46e5",
-              secondary: "#10b981",
-              danger: "#ef4444",
-            },
-          },
-        },
-      };
-
-      // MUDANÇA AQUI: URL única do seu Google Apps Script (Web App)
-      // Substitua pela URL gerada quando você clicar em "Implantar" na sua Planilha
-      const API_URL = "https://script.google.com/macros/s/AKfycbydL9Fj-dOGNQ3gtqHGMBAQ8z4EVCaAbhCZqT9CwNsNAZ9gPSIBOqYIexIDXtT6fsloDQ/exec";
-      window.API_URL_BASE = API_URL;
-
-      window.loggedInUserEmail = "";
-      window.loggedInUserRole = "";
-
-      // Sistema de Navegação SPA
-      function showLoading() {
-        document.getElementById("loadingOverlay").style.display = "flex";
-      }
-      function hideLoading() {
-        document.getElementById("loadingOverlay").style.none = "none";
-        // Corrigido um pequeno bug de digitação nativo (.style.none) para .style.display
-        document.getElementById("loadingOverlay").style.display = "none";
-      }
-
-      async function loadPage(name) {
-        showLoading();
-        try {
-          const response = await fetch(
-            `${name}.html?v=${new Date().getTime()}`,
-          );
-          if (!response.ok)
-            throw new Error("Módulo de visualização não encontrado.");
-          const html = await response.text();
-
-          const container = document.getElementById("spa-container");
-          const dashboardView = document.getElementById("dashboard-view");
-
-          if (dashboardView) dashboardView.style.display = "none";
-          container.style.display = "block";
-
-          insertHtmlWithScripts(container, html);
-          hideLoading();
-        } catch (err) {
-          hideLoading();
-          console.error(err);
-          alert("Erro ao carregar módulo: " + err.message);
-        }
-      }
-
-      function insertHtmlWithScripts(container, html) {
-        const range = document.createRange();
-        range.selectNode(document.body);
-        const fragment = range.createContextualFragment(html);
-
-        const scripts = fragment.querySelectorAll("script");
-
-        container.innerHTML = "";
-        container.appendChild(fragment);
-
-        scripts.forEach((s) => {
-          const scriptTag = document.createElement("script");
-          if (s.src) {
-            scriptTag.src = s.src;
-          } else {
-            scriptTag.textContent = s.textContent;
-          }
-          document.body.appendChild(scriptTag);
-          if (!s.src) scriptTag.remove();
-        });
-      }
-
-      function navegarPara(pagina) {
-        loadPage(pagina);
-      }
-
-      function voltarParaDashboard() {
-        const container = document.getElementById("spa-container");
-        const dashboardView = document.getElementById("dashboard-view");
-        if (container) {
-          container.innerHTML = "";
-          container.style.display = "none";
-        }
-        if (dashboardView) {
-          dashboardView.style.display = "block";
-          const role = localStorage.getItem("userRole");
-          if (role) aplicarPermissoes(role);
-        }
-      }
-
-      // MUDANÇA AQUI: Adaptado para enviar a ação "login" em formato POST compatível com o Sheets
-      async function handleLogin() {
-        const email = document.getElementById("email-input").value.trim();
-        const pin = document.getElementById("pin-input").value.trim();
-        const btn = document.getElementById("btn-login");
-        const errorElement = document.getElementById("login-error");
-
-        if (!email || !pin) return;
-
-        btn.innerHTML =
-          '<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span> Entrando...';
-        btn.disabled = true;
-        errorElement.classList.add("hidden");
-
-        try {
-          // O Google Apps Script Web App recebe tudo por POST na URL principal
-          const response = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain" }, // 'text/plain' evita requisições preflight (OPTIONS) problemáticas no Apps Script
-            body: JSON.stringify({ acao: "login", email, pin }),
-          });
-          const data = await response.json();
-          handleAuthSuccess(data);
-        } catch (err) {
-          alert("Erro de conexão com o banco de dados em nuvem.");
-          console.error(err);
-        } finally {
-          btn.innerHTML = "Entrar no Sistema";
-          btn.disabled = false;
-        }
-      }
-
-      function handleAuthSuccess(response) {
-        const errorElement = document.getElementById("login-error");
-
-        if (response?.success) {
-          localStorage.setItem("userEmail", response.email);
-          localStorage.setItem("userRole", response.role.toUpperCase());
-
-          window.loggedInUserEmail = response.email;
-          window.loggedInUserRole = response.role.toUpperCase();
-
-          document.getElementById("login-form-container").style.display =
-            "none";
-          aplicarPermissoes(window.loggedInUserRole);
-        } else {
-          errorElement.classList.remove("hidden");
-          errorElement.textContent = response.message || "Acesso negado.";
-        }
-      }
-
-      function aplicarPermissoes(role) {
-        const userRole = String(role).toUpperCase();
-        const dash = document.getElementById("dashboard-view");
-
-        const regras = {
-          "card1-admin": userRole === "ADMINISTRADOR" || userRole === "ADMIN",
-          "card2-evento": [
-            "ADMINISTRADOR",
-            "ADMIN",
-            "CERIMONIALISTA",
-            "FUNCIONARIO",
-          ].includes(userRole),
-          "card3-user-management": [
-            "ADMINISTRADOR",
-            "ADMIN",
-            "CERIMONIALISTA",
-          ].includes(userRole),
-          "card4-checkin": [
-            "ADMINISTRADOR",
-            "ADMIN",
-            "CERIMONIALISTA",
-            "FUNCIONARIO",
-            "RECEPCIONISTA",
-          ].includes(userRole),
-          "card5-client": [
-            "ADMINISTRADOR",
-            "ADMIN",
-            "CERIMONIALISTA",
-            "CLIENTE",
-          ].includes(userRole),
-        };
-
-        Object.keys(regras).forEach((id) => {
-          const el = document.getElementById(id);
-          if (el) {
-            el.style.display = regras[id] ? "block" : "none";
-            if (regras[id])
-              setTimeout(() => el.classList.add("is-visible"), 50);
-          }
-        });
-
-        if (userRole === "ADMINISTRADOR" || userRole === "ADMIN") {
-          const adminDash = document.getElementById(
-            "admin-dashboard-analytics",
-          );
-          if (adminDash) adminDash.classList.remove("hidden");
-          carregarStatsDashboard();
-        }
-
-        document.getElementById("email-display").textContent =
-          window.loggedInUserEmail;
-        dash.style.display = "block";
-        setTimeout(() => dash.classList.add("is-loaded"), 50);
-      }
-
-      // MUDANÇA AQUI: Mudou de /stats para uma requisição GET com o parâmetro ?acao=getStats
-      async function carregarStatsDashboard() {
-        try {
-          const response = await fetch(`${API_URL}?acao=getStats`);
-          const stats = await response.json();
-          if (stats) {
-            if (document.getElementById("stat-eventos-ativos"))
-              document.getElementById("stat-eventos-ativos").textContent =
-                stats.eventosAtivos || 0;
-            if (document.getElementById("stat-cerimonialistas"))
-              document.getElementById("stat-cerimonialistas").textContent =
-                stats.cerimonialistas || 0;
-          }
-        } catch (e) {
-          console.log("Erro ao carregar métricas da planilha.");
-        }
-      }
-
-      function logout() {
-        localStorage.clear();
-        window.location.reload();
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        const savedEmail = localStorage.getItem("userEmail");
-        const savedRole = localStorage.getItem("userRole");
-
-        if (savedEmail && savedRole) {
-          window.loggedInUserEmail = savedEmail;
-          window.loggedInUserRole = savedRole.toUpperCase();
-          document.getElementById("login-form-container").style.display =
-            "none";
-          aplicarPermissoes(window.loggedInUserRole);
-        } else {
-          document.getElementById("login-form-container").style.display =
-            "flex";
-          document.getElementById("dashboard-view").style.display = "none";
-        }
-      });
-    </script>
   </head>
 
   <body class="p-4 md:p-8">
-    <div
-      id="login-form-container"
-      class="min-h-screen flex items-center justify-center"
-    >
-      <div
-        class="w-full max-w-sm bg-white p-8 rounded-3xl shadow-2xl border border-gray-100"
-      >
-        <div class="flex flex-col items-center mb-8">
-          <div
-            class="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4 transform rotate-3"
-          >
-            <svg
-              class="w-10 h-10 text-primary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              ></path>
-            </svg>
-          </div>
-          <h2 class="text-3xl font-black text-gray-800 tracking-tighter">
-            Painel de Acesso
-          </h2>
-          <p class="text-gray-400 text-sm font-medium">
-            Controle de Eventos & RSVP
-          </p>
-        </div>
-        <div
-          id="login-error"
-          class="mb-4 p-3 text-xs text-white bg-danger rounded-xl text-center hidden"
-        ></div>
-        <div class="space-y-4">
-          <div>
-            <label
-              class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1"
-              >E-mail de Usuário</label
-            >
-            <input
-              type="email"
-              id="email-input"
-              placeholder="seu@email.com"
-              class="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary outline-none transition"
-            />
-          </div>
-          <div>
-            <label
-              class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1"
-              >PIN de Segurança</label
-            >
-            <input
-              type="password"
-              id="pin-input"
-              placeholder="••••"
-              class="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary outline-none transition"
-            />
-          </div>
-          <button
-            id="btn-login"
-            onclick="handleLogin()"
-            class="w-full py-5 bg-primary text-white rounded-2xl font-black shadow-xl hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center"
-          >
-            Entrar no Sistema
-          </button>
-        </div>
+    <div class="max-w-6xl mx-auto mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-gray-100 pb-8">
+      <div>
+        <p class="text-sm font-semibold text-indigo-600 mb-1">Bem-vindo de volta,</p>
+        <h1 id="user-name" class="text-3xl font-black text-gray-900 tracking-tight">--</h1>
+        <p id="user-email-display" class="text-xs text-gray-400 font-mono mt-1">--</p>
       </div>
-    </div>
 
-    <div id="dashboard-view">
-      <header
-        class="mb-10 p-6 bg-white rounded-3xl shadow-sm border-l-8 border-indigo-600 gap-4 flex justify-between items-center"
-      >
+      <div class="flex items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+        <div class="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center text-xl">🛡️</div>
         <div>
-          <h1 class="text-2xl font-black text-gray-800 tracking-tighter">
-            Dashboard Principal
-          </h1>
-          <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">
-            <span id="email-display" class="text-primary"></span>
-          </p>
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Nível de Acesso</p>
+          <p id="user-role" class="text-sm font-bold text-gray-800">--</p>
         </div>
-        <button
-          onclick="logout()"
-          class="px-5 py-2.5 text-xs font-black text-red-500 border-red-100 border-4 p-4 bg-red-50 rounded-xl hover:bg-red-100 transition-all"
-        >
-          Sair
+      </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto mb-8 border-b border-gray-200">
+      <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+        <button id="nav-dashboard" onclick="carregarVisualizacao('dashboard')" class="border-indigo-600 text-indigo-600 pb-4 px-1 border-b-2 font-medium text-sm transition-all">
+          📊 Dashboard
         </button>
-      </header>
+        <button id="nav-eventos" onclick="carregarVisualizacao('eventos')" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 pb-4 px-1 border-b-2 font-medium text-sm transition-all">
+          📅 Gerir Eventos
+        </button>
+        <button id="nav-equipe" onclick="carregarVisualizacao('equipe')" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 pb-4 px-1 border-b-2 font-medium text-sm transition-all">
+          👥 Minha Equipa
+        </button>
+      </nav>
+    </div>
 
-      <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div
-          id="card1-admin"
-          class="card bg-white p-8 rounded-3xl shadow-sm border border-gray-100 cursor-pointer"
-          onclick="navegarPara('cadastroContratos')"
-        >
-          <h3 class="text-xl font-black text-gray-800 mb-2 tracking-tight">
-            Contratos
-          </h3>
-          <p class="text-sm text-gray-400 font-medium">Gestão de contratos.</p>
+    <div class="max-w-6xl mx-auto">
+      
+      <div id="dashboard-view" class="card is-visible space-y-8">
+        <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+          <h2 class="text-xl font-bold text-gray-800 mb-2">Resumo Geral do Sistema</h2>
+          <p class="text-sm text-gray-500">Métricas em tempo real ligadas à tua conta.</p>
         </div>
-        <div
-          id="card2-evento"
-          class="card bg-white p-8 rounded-3xl shadow-sm border border-gray-100 cursor-pointer"
-          onclick="navegarPara('cadastroEventos')"
-        >
-          <h3 class="text-xl font-black text-gray-800 mb-2 tracking-tight">
-            Eventos
-          </h3>
-          <p class="text-sm text-gray-400 font-medium">
-            Gestão de cronogramas e datas.
-          </p>
-        </div>
-        <div
-          id="card3-user-management"
-          class="card bg-white p-8 rounded-3xl shadow-sm border border-gray-100 cursor-pointer"
-          onclick="navegarPara('cadastroUsuarios')"
-        >
-          <h3 class="text-xl font-black text-gray-800 mb-2 tracking-tight">
-            Equipe
-          </h3>
-          <p class="text-sm text-gray-400 font-medium">
-            Gerenciamento de permissões.
-          </p>
-        </div>
-        <div
-          id="card4-checkin"
-          class="card bg-white p-8 rounded-3xl shadow-sm border border-gray-100 cursor-pointer"
-          onclick="navegarPara('checkin')"
-        >
-          <h3 class="text-xl font-black text-gray-800 mb-2 tracking-tight">
-            Check-in
-          </h3>
-          <p class="text-sm text-gray-400 font-medium">
-            Recepção em tempo real.
-          </p>
-        </div>
-        <div
-          id="card5-client"
-          class="card bg-white p-8 rounded-3xl shadow-sm border border-gray-100 cursor-pointer"
-          onclick="navegarPara('clientes')"
-        >
-          <h3 class="text-xl font-black text-gray-800 mb-2 tracking-tight">
-            Anfitrião
-          </h3>
-          <p class="text-sm text-gray-400 font-medium">
-            Área exclusiva do cliente.
-          </p>
-        </div>
-      </main>
 
-      <div id="admin-dashboard-analytics" class="hidden mt-16">
-        <h2
-          class="text-xs font-black text-gray-400 uppercase tracking-widest mb-8 ml-2"
-        >
-          Métricas Gerais
-        </h2>
-        <div class="grid grid-cols-2 gap-6 max-w-2xl">
-          <div
-            class="bg-indigo-600 p-8 rounded-3xl shadow-xl shadow-indigo-100"
-          >
-            <p class="text-xs font-bold text-indigo-200 uppercase mb-2">
-              Eventos Ativos
-            </p>
-            <p
-              id="stat-eventos-ativos"
-              class="text-4xl font-black text-white tracking-tighter"
-            >
-              --
-            </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-indigo-600 p-8 rounded-3xl shadow-xl shadow-indigo-100 text-white">
+            <p class="text-xs font-bold text-indigo-200 uppercase mb-2">Eventos Ativos</p>
+            <p id="stat-eventos-ativos" class="text-5xl font-black tracking-tighter">--</p>
           </div>
-          <div
-            class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm"
-          >
-            <p class="text-xs font-bold text-gray-400 uppercase mb-2">
-              Total Equipe
-            </p>
-            <p
-              id="stat-cerimonialistas"
-              class="text-4xl font-black text-gray-800 tracking-tighter"
-            >
-              --
-            </p>
+          
+          <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+            <p class="text-xs font-bold text-gray-400 uppercase mb-2">Total de Cerimonialistas / Equipa</p>
+            <p id="stat-cerimonialistas" class="text-5xl font-black text-gray-800 tracking-tighter">--</p>
           </div>
         </div>
       </div>
+
+      <div id="spa-container" class="hidden"></div>
+
     </div>
 
-    <div id="spa-container" class="max-w-6xl mx-auto"></div>
-
-    <div
-      id="loadingOverlay"
-      class="hidden fixed inset-0 items-center justify-center bg-white/90 z-[9999]"
-    >
+    <div id="loadingOverlay" class="hidden fixed inset-0 items-center justify-center bg-white/90 z-[9999]">
       <div class="flex flex-col items-center">
-        <div
-          class="w-16 h-16 border-[6px] border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"
-        ></div>
-        <span
-          class="text-xs font-black text-indigo-600 uppercase tracking-widest"
-          >Carregando...</span
-        >
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 mb-4"></div>
+        <p id="loadingText" class="text-sm font-semibold text-gray-600">A processar dados...</p>
       </div>
     </div>
+
+    <script>
+      // URL de Execução Padrão do teu Google Apps Script
+      const API_URL = "https://script.google.com/macros/s/AKfycbydL9Fj-dOGNQ3gtqHGMBAQ8z4EVCaAbhCZqT9CwNsNAZ9gPSIBOqYIexIDXtT6fsloDQ/exec";
+
+      // Captura segura de credenciais do localStorage (com valores padrão de contingência)
+      let userEmail = localStorage.getItem("userEmail") || "vilelamn@gmail.com";
+      let userRole = localStorage.getItem("userRole") || "ADMINISTRADOR";
+      let userName = localStorage.getItem("userName") || "Marcelo Vilela";
+
+      /**
+       * Renderiza e exibe na interface as credenciais validadas do utilizador
+       */
+      function inicializarDadosUsuario() {
+        document.getElementById("user-name").textContent = userName;
+        document.getElementById("user-role").textContent = userRole.toUpperCase();
+        document.getElementById("user-email-display").textContent = userEmail;
+        
+        // Bloqueio de Segurança: Apenas Administradores podem aceder à aba da equipa
+        const navEquipe = document.getElementById("nav-equipe");
+        if (navEquipe && userRole.toUpperCase() !== "ADMINISTRADOR") {
+          navEquipe.style.display = "none";
+        }
+      }
+
+      /**
+       * Faz a chamada assíncrona ao Apps Script injetando email e role
+       */
+      async function carregarStatsDashboard() {
+        try {
+          // Passagem correta de email e role via URL para o roteador processarRequisicao()
+          const url = `${API_URL}?acao=getStats&email=${encodeURIComponent(userEmail)}&role=${encodeURIComponent(userRole)}`;
+          
+          const response = await fetch(url);
+          if (!response.ok) throw new Error("Falha ao comunicar com o servidor.");
+          
+          const res = await response.json();
+
+          if (res) {
+            document.getElementById("stat-eventos-ativos").textContent = res.ativos !== undefined ? res.ativos : "0";
+            document.getElementById("stat-cerimonialistas").textContent = res.cerimonialistas !== undefined ? res.cerimonialistas : "0";
+          }
+        } catch (error) {
+          console.error("Erro ao obter estatísticas:", error);
+          document.getElementById("stat-eventos-ativos").textContent = "!";
+          document.getElementById("stat-cerimonialistas").textContent = "!";
+        }
+      }
+
+      /**
+       * Gerenciador SPA Local (Altera abas e faz fetch/injeção de ficheiros locais se necessário)
+       */
+      async function carregarVisualizacao(viewId) {
+        const dashboardView = document.getElementById("dashboard-view");
+        const spaContainer = document.getElementById("spa-container");
+        const loading = document.getElementById("loadingOverlay");
+
+        // Reseta estados visuais dos botões da navbar
+        document.querySelectorAll('nav button').forEach(btn => {
+          btn.classList.remove('border-indigo-600', 'text-indigo-600');
+          btn.classList.add('border-transparent', 'text-gray-500');
+        });
+
+        // Aplica estilo ativo no botão selecionado
+        const activeBtn = document.getElementById(`nav-${viewId}`);
+        if (activeBtn) {
+          activeBtn.classList.remove('border-transparent', 'text-gray-500');
+          activeBtn.classList.add('border-indigo-600', 'text-indigo-600');
+        }
+
+        // Fluxo de roteamento SPA
+        if (viewId === 'dashboard') {
+          if (spaContainer) spaContainer.classList.add("hidden");
+          if (dashboardView) {
+            dashboardView.classList.add("is-visible");
+            dashboardView.style.display = "block";
+          }
+          await carregarStatsDashboard();
+        } 
+        else {
+          // Oculta aba do dashboard principal
+          if (dashboardView) {
+            dashboardView.classList.remove("is-visible");
+            dashboardView.style.display = "none";
+          }
+          if (spaContainer) spaContainer.classList.remove("hidden");
+
+          if (loading) loading.style.display = "flex";
+
+          try {
+            // Mapeia o destino com base no ID da aba
+            let targetFile = viewId === 'eventos' ? 'clientes.html' : 'cadastroUsuarios.html';
+            
+            const response = await fetch(targetFile);
+            if (!response.ok) throw new Error(`Não foi possível carregar o arquivo ${targetFile}`);
+            
+            const htmlContent = await response.text();
+            
+            if (spaContainer) {
+              spaContainer.innerHTML = htmlContent;
+              
+              // Executa scripts embutidos no HTML injetado para garantir inicialização
+              const scripts = spaContainer.querySelectorAll("script");
+              scripts.forEach(oldScript => {
+                const newScript = document.createElement("script");
+                if (oldScript.src) {
+                  newScript.src = oldScript.src;
+                } else {
+                  newScript.textContent = oldScript.textContent;
+                }
+                document.body.appendChild(newScript).parentNode.removeChild(newScript);
+              });
+            }
+          } catch (err) {
+            if (spaContainer) {
+              spaContainer.innerHTML = `<div class="bg-white p-6 rounded-2xl border border-red-100 text-red-500 font-semibold text-center">
+                Erro ao carregar a página: ${err.message}</div>`;
+            }
+          } finally {
+            if (loading) loading.style.display = "none";
+          }
+        }
+      }
+
+      /**
+       * Atalho global para que as subpáginas consigam acionar o regresso ao Dashboard
+       */
+      window.voltarParaDashboard = function() {
+        carregarVisualizacao('dashboard');
+      };
+
+      // Inicialização assim que o DOM estiver carregado por completo
+      document.addEventListener("DOMContentLoaded", async () => {
+        inicializarDadosUsuario();
+        await carregarStatsDashboard();
+      });
+    </script>
   </body>
 </html>
